@@ -13,11 +13,11 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
-    <Filter Include="api">
-      <UniqueIdentifier>{2009725f-77b9-4ae9-9786-54d49666f207}</UniqueIdentifier>
-    </Filter>
     <Filter Include="scripts">
       <UniqueIdentifier>{beb86421-8d4e-4371-821a-5300dbf76c64}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="f4se">
+      <UniqueIdentifier>{2009725f-77b9-4ae9-9786-54d49666f207}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -25,31 +25,34 @@
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="..\f4se\PapyrusArgs.cpp">
-      <Filter>api</Filter>
+      <Filter>f4se</Filter>
     </ClCompile>
     <ClCompile Include="..\f4se\PapyrusVM.cpp">
-      <Filter>api</Filter>
+      <Filter>f4se</Filter>
     </ClCompile>
     <ClCompile Include="..\f4se\GameExtraData.cpp">
-      <Filter>api</Filter>
+      <Filter>f4se</Filter>
     </ClCompile>
     <ClCompile Include="..\f4se\GameTypes.cpp">
-      <Filter>api</Filter>
+      <Filter>f4se</Filter>
     </ClCompile>
     <ClCompile Include="..\f4se\GameAPI.cpp">
-      <Filter>api</Filter>
+      <Filter>f4se</Filter>
     </ClCompile>
     <ClCompile Include="..\f4se\PapyrusInterfaces.cpp">
-      <Filter>api</Filter>
+      <Filter>f4se</Filter>
     </ClCompile>
     <ClCompile Include="..\f4se\PapyrusValue.cpp">
-      <Filter>api</Filter>
+      <Filter>f4se</Filter>
     </ClCompile>
     <ClCompile Include="..\f4se\GameUtilities.cpp">
-      <Filter>api</Filter>
+      <Filter>f4se</Filter>
     </ClCompile>
     <ClCompile Include="f4mp.cpp">
       <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="..\f4se\PapyrusEvents.cpp">
+      <Filter>f4se</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

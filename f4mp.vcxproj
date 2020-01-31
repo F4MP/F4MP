@@ -106,7 +106,8 @@
       <ModuleDefinitionFile>exports.def</ModuleDefinitionFile>
     </Link>
     <PostBuildEvent>
-      <Command>copy "$(TargetPath)" "D:\SteamLibrary\steamapps\common\Fallout 4\Data\F4SE\Plugins\$(TargetFileName)"</Command>
+      <Command>copy "$(TargetPath)" "D:\SteamLibrary\steamapps\common\Fallout 4\Data\F4SE\Plugins\$(TargetFileName)"
+copy "$(ProjectDir)\scripts\F4MP.psc" "D:\SteamLibrary\steamapps\common\Fallout 4\Data\Scripts\Source\User\F4MP.psc"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -175,6 +176,7 @@
     <ClCompile Include="..\f4se\GameTypes.cpp" />
     <ClCompile Include="..\f4se\GameUtilities.cpp" />
     <ClCompile Include="..\f4se\PapyrusArgs.cpp" />
+    <ClCompile Include="..\f4se\PapyrusEvents.cpp" />
     <ClCompile Include="..\f4se\PapyrusInterfaces.cpp" />
     <ClCompile Include="..\f4se\PapyrusValue.cpp" />
     <ClCompile Include="..\f4se\PapyrusVM.cpp" />

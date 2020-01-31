@@ -48,7 +48,7 @@ extern "C" {
 		g_papyrus = (F4SEPapyrusInterface*)f4se->QueryInterface(kInterface_Papyrus);
 
 		//Check if the function registration was a success...
-		bool btest = g_papyrus->Register(F4MP::RegisterFuncs);
+		bool btest = F4MP::GetInstance().Register(g_papyrus);
 
 		if (btest) {
 			_MESSAGE("Register succeeded");
