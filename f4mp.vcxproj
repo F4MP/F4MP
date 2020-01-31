@@ -179,10 +179,10 @@
     <ClCompile Include="..\f4se\PapyrusValue.cpp" />
     <ClCompile Include="..\f4se\PapyrusVM.cpp" />
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="MyPlugin.cpp" />
+    <ClCompile Include="f4mp.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="MyPlugin.h" />
+    <ClInclude Include="f4mp.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="exports.def" />

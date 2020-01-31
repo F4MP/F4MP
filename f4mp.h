@@ -1,6 +1,6 @@
 #include "f4se/PapyrusNativeFunctions.h"
 
-namespace MyPluginNamespace
+namespace f4mp
 {
 	float MyTest(StaticFunctionTag* base);
 

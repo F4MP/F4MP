@@ -2,7 +2,7 @@
 #include "f4se_common/f4se_version.h"	// What version of SKSE is running?
 #include <shlobj.h>				// CSIDL_MYCODUMENTS
 
-#include "MyPlugin.h"
+#include "f4mp.h"
 
 static PluginHandle					g_pluginHandle = kPluginHandle_Invalid;
 static F4SEPapyrusInterface* g_papyrus = NULL;
@@ -10,15 +10,13 @@ static F4SEPapyrusInterface* g_papyrus = NULL;
 extern "C" {
 
 	bool F4SEPlugin_Query(const F4SEInterface* f4se, PluginInfo* info) {	// Called by SKSE to learn about this plugin and check that it's safe to load it
-		gLog.OpenRelative(CSIDL_MYDOCUMENTS, "\\My Games\\Fallout4\\F4SE\\MyPluginScript.log");
+		gLog.OpenRelative(CSIDL_MYDOCUMENTS, "\\My Games\\Fallout4\\F4SE\\F4MP.log");
 		gLog.SetPrintLevel(IDebugLog::kLevel_Error);
 		gLog.SetLogLevel(IDebugLog::kLevel_DebugMessage);
 
-		_MESSAGE("MyPluginScript");
-
 		// populate info structure
 		info->infoVersion = PluginInfo::kInfoVersion;
-		info->name = "MyPluginScript";
+		info->name = "F4MP";
 		info->version = 1;
 
 		// store plugin handle so we can identify ourselves later
@@ -44,16 +42,16 @@ extern "C" {
 		return true;
 	}
 
-	bool F4SEPlugin_Load(const F4SEInterface* skse) {	// Called by SKSE to load this plugin
-		_MESSAGE("MyScriptPlugin loaded");
+	bool F4SEPlugin_Load(const F4SEInterface* f4se) {	// Called by SKSE to load this plugin
+		_MESSAGE("F4MP loaded");
 
-		g_papyrus = (F4SEPapyrusInterface*)skse->QueryInterface(kInterface_Papyrus);
+		g_papyrus = (F4SEPapyrusInterface*)f4se->QueryInterface(kInterface_Papyrus);
 
 		//Check if the function registration was a success...
-		bool btest = g_papyrus->Register(MyPluginNamespace::RegisterFuncs);
+		bool btest = g_papyrus->Register(f4mp::RegisterFuncs);
 
 		if (btest) {
-			_MESSAGE("Register Succeeded");
+			_MESSAGE("Register succeeded");
 		}
 
 		return true;
