@@ -33,3 +33,4 @@
 *.pdb
 *.log
 *.tlog
+*.cache

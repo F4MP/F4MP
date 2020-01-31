@@ -16,6 +16,9 @@
     <Filter Include="api">
       <UniqueIdentifier>{2009725f-77b9-4ae9-9786-54d49666f207}</UniqueIdentifier>
     </Filter>
+    <Filter Include="scripts">
+      <UniqueIdentifier>{beb86421-8d4e-4371-821a-5300dbf76c64}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -52,6 +55,9 @@
   <ItemGroup>
     <None Include="exports.def">
       <Filter>소스 파일</Filter>
+    </None>
+    <None Include="scripts\F4MP.psc">
+      <Filter>scripts</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>
