@@ -13,5 +13,15 @@ Function SetEntityPosition(int entityID, float x, float y, float z) global nativ
 Function WriteNumber(float number) global native
 float Function ReadNumber() global native
 
-Function SetEntityNumber(int entityID, string name, float value) global native
-float Function GetEntityNumber(int entityID, string name) global native
+Function SetEntVarNum(int entityID, string name, float value) global native
+Function SetEntVarAnim(int entityID, string animState) global native
+float Function GetEntVarNum(int entityID, string name) global native
+string Function GetEntVarAnim(int entityID) global native
+
+Function GetTransforms(Actor actor) global native
+Function SetTransforms(Actor actor) global native
+
+Action Function GetAction(string name) global native
+
+float Function Atan2(float y, float x) global native
+string Function GetWalkDir(float dX, float dY, float angleZ) global native

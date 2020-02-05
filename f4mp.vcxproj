@@ -172,9 +172,12 @@ copy "$(ProjectDir)\scripts\F4MP.psc" "D:\SteamLibrary\steamapps\common\Fallout 
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\f4se\GameAPI.cpp" />
+    <ClCompile Include="..\f4se\GameData.cpp" />
     <ClCompile Include="..\f4se\GameExtraData.cpp" />
     <ClCompile Include="..\f4se\GameTypes.cpp" />
     <ClCompile Include="..\f4se\GameUtilities.cpp" />
+    <ClCompile Include="..\f4se\NiObjects.cpp" />
+    <ClCompile Include="..\f4se\NiTypes.cpp" />
     <ClCompile Include="..\f4se\PapyrusArgs.cpp" />
     <ClCompile Include="..\f4se\PapyrusEvents.cpp" />
     <ClCompile Include="..\f4se\PapyrusInterfaces.cpp" />

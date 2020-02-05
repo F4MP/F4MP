@@ -54,6 +54,15 @@
     <ClCompile Include="..\f4se\PapyrusEvents.cpp">
       <Filter>f4se</Filter>
     </ClCompile>
+    <ClCompile Include="..\f4se\NiObjects.cpp">
+      <Filter>f4se</Filter>
+    </ClCompile>
+    <ClCompile Include="..\f4se\NiTypes.cpp">
+      <Filter>f4se</Filter>
+    </ClCompile>
+    <ClCompile Include="..\f4se\GameData.cpp">
+      <Filter>f4se</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="exports.def">
