@@ -77,8 +77,6 @@ public:
 		librg_free(&ctx);
 	}
 
-	std::unordered_map<std::string, BGSAction*> actions;
-	
 	bool Register(F4SEPapyrusInterface* _papyrus)
 	{
 		papyrus = _papyrus;
@@ -97,24 +95,10 @@ public:
 				vm->RegisterFunction(new NativeFunction4<StaticFunctionTag, void, UInt32, Float32, Float32, Float32>("SetEntityPosition", "F4MP", SetEntityPosition, vm));
 				vm->SetFunctionFlags("F4MP", "SetEntityPosition", IFunction::kFunctionFlag_NoWait);
 				
-				vm->RegisterFunction(new NativeFunction1<StaticFunctionTag, void, Float32>("WriteNumber", "F4MP", WriteNumber, vm));
-				vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, Float32>("ReadNumber", "F4MP", ReadNumber, vm));
-				//vm->SetFunctionFlags("F4MP", "WriteNumber", IFunction::kFunctionFlag_NoWait);
-
 				vm->RegisterFunction(new NativeFunction3<StaticFunctionTag, void, UInt32, BSFixedString, Float32>("SetEntVarNum", "F4MP", SetEntVarNum, vm));
 				vm->RegisterFunction(new NativeFunction2<StaticFunctionTag, void, UInt32, BSFixedString>("SetEntVarAnim", "F4MP", SetEntVarAnim, vm));
 				vm->RegisterFunction(new NativeFunction2<StaticFunctionTag, Float32, UInt32, BSFixedString>("GetEntVarNum", "F4MP", GetEntVarNum, vm));
 				vm->RegisterFunction(new NativeFunction1<StaticFunctionTag, BSFixedString, UInt32>("GetEntVarAnim", "F4MP", GetEntVarAnim, vm));
-
-				vm->RegisterFunction(new NativeFunction1<StaticFunctionTag, void, Actor*>("GetTransforms", "F4MP", GetTransforms, vm));
-				vm->RegisterFunction(new NativeFunction1<StaticFunctionTag, void, Actor*>("SetTransforms", "F4MP", SetTransforms, vm));
-				
-				vm->RegisterFunction(new NativeFunction1<StaticFunctionTag, BGSAction*, BSFixedString>("GetAction", "F4MP",
-					[](StaticFunctionTag* base, BSFixedString name)
-					{
-						F4MP& self = GetInstance();
-						return self.actions[name.c_str()];
-					}, vm));
 
 				vm->RegisterFunction(new NativeFunction2<StaticFunctionTag, Float32, Float32, Float32>("Atan2", "F4MP", Atan2, vm));
 				
@@ -190,7 +174,7 @@ private:
 
 	std::vector<std::string> animStates;
 	std::unordered_map<std::string, SInt32> animStateIDs;
-
+	
 	static void OnConnectRequest(librg_event* event)
 	{
 		F4MP& self = GetInstance();
@@ -367,31 +351,6 @@ private:
 			return false;
 		}
 
-		/*tArray<TESForm*> idles = (*g_dataHandler)->arrIDLE;
-
-		_MESSAGE("%d", *g_isGameDataReady);
-
-		_MESSAGE("%u", (*g_dataHandler)->arrIDLE.count);
-
-		for (UInt32 i = 0; i < idles.count; i++)
-		{
-			TESForm* idle = idles[i];
-			_MESSAGE(idle->GetFullName());
-		}*/
-
-
-		auto actions = (*g_dataHandler)->arrAACT;
-
-		_MESSAGE("%u", actions.count);
-
-		for (UInt32 i = 0; i < actions.count; i++)
-		{
-			_MESSAGE("%u: %s", i, actions[i]->keyword.c_str());
-
-			self.actions[actions[i]->keyword.c_str()] = actions[i];
-		}
-
-
 		return true;
 	}
 
@@ -454,43 +413,7 @@ private:
 		entity->position.z = z;
 	}
 
-	//TODO: exception for the event not being the proper one
-
-	static void WriteNumber(StaticFunctionTag* base, Float32 number)
-	{
-		F4MP& self = GetInstance();
-		if (!self.currentEvent || self.currentEvent->id != LIBRG_CLIENT_STREAMER_UPDATE)
-		{
-			_ERROR("id of %p is not LIBRG_CLIENT_STREAMER_UPDATE", self.currentEvent);
-			return;
-		}
-
-		librg_data_wf32(self.currentEvent->data, number);
-	}
-
-	static void WriteString(StaticFunctionTag* base, BSFixedString string)
-	{
-		
-	}
-
-	static Float32 ReadNumber(StaticFunctionTag* base)
-	{
-		F4MP& self = GetInstance();
-		if (!self.currentEvent || self.currentEvent->id != LIBRG_ENTITY_UPDATE)
-		{
-			_ERROR("id of %p is not LIBRG_ENTITY_UPDATE", self.currentEvent);
-			return 0.f;
-		}
-
-		return librg_data_rf32(self.currentEvent->data);
-	}
-
-	static BSFixedString ReadString(StaticFunctionTag* base)
-	{
-		return BSFixedString();
-	}
-
-	//abstract ...EntVar...
+	//TODO: abstract ...EntVar...
 
 	static void SetEntVarNum(StaticFunctionTag* base, UInt32 entityID, BSFixedString name, Float32 value)
 	{
@@ -550,57 +473,6 @@ private:
 
 		PlayerData* data = (PlayerData*)entity->user_data;
 		return self.animStates[data->integers["animState"]].c_str();
-	}
-
-	std::unordered_map<std::string, NiTransform> transforms;
-
-	static void GetTransforms(StaticFunctionTag* base, Actor* actor)
-	{
-		/*for (UInt32 i = 0; i < actor->actorValueData.count; i++)
-		{
-			Actor::ActorValueData data = actor->actorValueData[i];
-			_MESSAGE("%u %f", data.avFormID, data.value);
-		}*/
-
-		F4MP& self = GetInstance();
-
-		actor->GetObjectRootNode()->Visit([&](NiAVObject* obj)
-			{
-				self.transforms[obj->m_name.c_str()] = obj->m_localTransform;
-				return false;
-			});
-	}
-
-	static void SetTransforms(StaticFunctionTag* base, Actor* actor)
-	{
-		if (!actor)
-		{
-			_ERROR("actor is null");
-			return;
-		}
-
-		NiNode* root = actor->GetObjectRootNode();
-		if (!root)
-		{
-			_ERROR("the root node of %p is null", actor);
-			return;
-		}
-
-		F4MP& self = GetInstance();
-
-		root->Visit([&](NiAVObject* obj)
-			{
-				auto found = self.transforms.find(obj->m_name.c_str());
-				if (found == self.transforms.end())
-				{
-					return false;
-				}
-
-				obj->m_localTransform = found->second;
-				//obj->UpdateTransformAndBounds();
-
-				return false;
-			});
 	}
 
 	static Float32 Atan2(StaticFunctionTag* base, Float32 y, Float32 x)
