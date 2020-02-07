@@ -12,4 +12,4 @@
 
 #include "f4mp.h"
 
-std::unique_ptr<F4MP> F4MP::instance;
+std::unique_ptr<f4mp::F4MP> f4mp::F4MP::instance;

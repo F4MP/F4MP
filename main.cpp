@@ -4,9 +4,6 @@
 
 #include "f4mp.h"
 
-static PluginHandle					g_pluginHandle = kPluginHandle_Invalid;
-static F4SEPapyrusInterface* g_papyrus = NULL;
-
 extern "C" {
 
 	bool F4SEPlugin_Query(const F4SEInterface* f4se, PluginInfo* info) {	// Called by SKSE to learn about this plugin and check that it's safe to load it
@@ -20,7 +17,7 @@ extern "C" {
 		info->version = 1;
 
 		// store plugin handle so we can identify ourselves later
-		g_pluginHandle = f4se->GetPluginHandle();
+		// g_pluginHandle = f4se->GetPluginHandle();
 
 		if (f4se->isEditor)
 		{
@@ -45,10 +42,8 @@ extern "C" {
 	bool F4SEPlugin_Load(const F4SEInterface* f4se) {	// Called by SKSE to load this plugin
 		_MESSAGE("F4MP loaded");
 
-		g_papyrus = (F4SEPapyrusInterface*)f4se->QueryInterface(kInterface_Papyrus);
-
 		//Check if the function registration was a success...
-		bool btest = F4MP::GetInstance().Register(g_papyrus);
+		bool btest = f4mp::F4MP::GetInstance().Init(f4se);
 
 		if (btest) {
 			_MESSAGE("Register succeeded");

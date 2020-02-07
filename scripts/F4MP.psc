@@ -1,6 +1,6 @@
 Scriptname F4MP Native Hidden
 
-bool Function Connect(string address, int port) global native
+bool Function Connect(Actor player, ActorBase playerActorBase, string address, int port) global native
 bool Function Disconnect() global native
 Function Tick() global native
 
@@ -17,3 +17,6 @@ string Function GetEntVarAnim(int entityID) global native
 
 float Function Atan2(float y, float x) global native
 string Function GetWalkDir(float dX, float dY, float angleZ) global native
+
+Function CopyAppearance(ActorBase src, ActorBase dest) global native
+Function CopyWornItems(Actor src, Actor dest) global native

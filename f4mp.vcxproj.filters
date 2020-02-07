@@ -63,6 +63,15 @@
     <ClCompile Include="..\f4se\GameData.cpp">
       <Filter>f4se</Filter>
     </ClCompile>
+    <ClCompile Include="..\f4se\GameFormComponents.cpp">
+      <Filter>f4se</Filter>
+    </ClCompile>
+    <ClCompile Include="..\f4se\GameForms.cpp">
+      <Filter>f4se</Filter>
+    </ClCompile>
+    <ClCompile Include="..\f4se\GameRTTI.cpp">
+      <Filter>f4se</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="exports.def">
@@ -74,6 +83,9 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="f4mp.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Utils.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
   </ItemGroup>
