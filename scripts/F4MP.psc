@@ -17,6 +17,10 @@ string Function GetEntVarAnim(int entityID) global native
 
 float Function Atan2(float y, float x) global native
 string Function GetWalkDir(float dX, float dY, float angleZ) global native
+Action Function GetAction(string name) global native
+Function Inspect(Form[] forms) global native
 
 Function CopyAppearance(ActorBase src, ActorBase dest) global native
 Function CopyWornItems(Actor src, Actor dest) global native
+
+Function PlayerHit(int hitter, int hittee, float damage) global native

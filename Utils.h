@@ -52,7 +52,7 @@ namespace f4mp
 		}
 
 	public:
-		template<class T, class... Ts>
+		template<class T>
 		static void Write(librg_data* data, const T& value);
 
 		template<class T>
@@ -120,7 +120,7 @@ namespace f4mp
 			}
 		}
 
-		template<class T, class... Ts>
+		template<class T>
 		static void Read(librg_data* data, T& value);
 
 		template<class T>

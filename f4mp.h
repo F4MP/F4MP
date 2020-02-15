@@ -23,6 +23,17 @@
 
 namespace f4mp
 {
+	enum Message : u16
+	{
+		Hit = LIBRG_EVENT_LAST + 1u
+	};
+
+	struct HitData
+	{
+		u32 hitter, hittee;
+		f32 damage;
+	};
+
 	struct AppearanceData
 	{
 		bool female;
@@ -175,6 +186,7 @@ namespace f4mp
 		F4MP() : ctx{}, port(0), playerEntityID((UInt32)-1), handle(kPluginHandle_Invalid), messaging(nullptr), papyrus(nullptr), task(nullptr),
 			animStates
 		{
+			//TODO: animation priority
 			"None",
 
 			"JogForward",
@@ -184,12 +196,22 @@ namespace f4mp
 
 			"JumpUp",
 			"JumpFall",
-			"JumpLand"
+			"JumpLand",
+
+			"FireWeapon"
 		}
 		{
 			for (SInt32 i = 0; i < static_cast<SInt32>(animStates.size()); i++)
 			{
-				animStateIDs[animStates[i]] = i;
+				const std::string& state = animStates[i];
+				std::string lowerState(state.length(), '\0');
+
+				for (size_t i = 0; i < state.length(); i++)
+				{
+					lowerState[i] = tolower(state[i]);
+				}
+
+				animStateIDs[lowerState] = i;
 			}
 
 			ctx.mode = LIBRG_MODE_CLIENT;
@@ -206,6 +228,8 @@ namespace f4mp
 			librg_event_add(&ctx, LIBRG_ENTITY_REMOVE, OnEntityRemove);
 
 			librg_event_add(&ctx, LIBRG_CLIENT_STREAMER_UPDATE, OnClientUpdate);
+
+			librg_network_add(&ctx, Message::Hit, OnHit);
 		}
 
 		virtual ~F4MP()
@@ -227,16 +251,18 @@ namespace f4mp
 				{
 				case F4SEMessagingInterface::kMessage_GameDataReady:
 				{
-					auto& npcs = (*g_dataHandler)->arrNPC_;
-					for (UInt32 i = 0; i < npcs.count; i++)
+					auto arr = &(*g_dataHandler)->arrNONE;
+
+					for (int i = 0; i < kFormType_Max; i++)
 					{
-						if (strcmp(npcs[i]->fullName.name.c_str(), "F4MP Player") == 0)
+						for (UInt32 j = 0; j < arr[i].count; j++)
 						{
-							_MESSAGE(npcs[i]->fullName.name.c_str());
-							break;
+							if (arr[i][j]->GetFormType() == kFormType_IDLE)
+							{
+								_MESSAGE("%d: %s", i, arr[i][j]->GetFullName());
+							}
 						}
 					}
-					break;
 				}
 				}
 			});*/
@@ -264,8 +290,36 @@ namespace f4mp
 
 					vm->RegisterFunction(new NativeFunction3<StaticFunctionTag, BSFixedString, Float32, Float32, Float32>("GetWalkDir", "F4MP", _GetWalkDir, vm));
 
+					vm->RegisterFunction(new NativeFunction1<StaticFunctionTag, BGSAction*, BSFixedString>("GetAction", "F4MP",
+						[](StaticFunctionTag* base, BSFixedString name)
+						{
+							auto& actions = (*g_dataHandler)->arrAACT;
+							for (UInt32 i = 0; i < actions.count; i++)
+							{
+								if (std::string(actions[i]->GetFullName()).compare(name.c_str()))
+								{
+									return actions[i];
+								}
+							}
+						}, vm));
+
+					vm->RegisterFunction(new NativeFunction1 < StaticFunctionTag, void, VMArray<TESForm*>>("Inspect", "F4MP",
+						[](StaticFunctionTag* base, VMArray<TESForm*> forms)
+						{
+							_MESSAGE("size: %u", forms.Length());
+
+							for (UInt32 i = 0; i < forms.Length(); i++)
+							{
+								TESForm* form;
+								forms.Get(&form, i);
+								_MESSAGE("%p %u %x %s", form - RelocationManager::s_baseAddr, form->GetFormType(), form->formID, form->GetFullName());
+							}
+						}, vm));
+
 					vm->RegisterFunction(new NativeFunction2<StaticFunctionTag, void, TESNPC*, TESNPC*>("CopyAppearance", "F4MP", CopyAppearance, vm));
 					vm->RegisterFunction(new NativeFunction2<StaticFunctionTag, void, Actor*, Actor*>("CopyWornItems", "F4MP", CopyWornItems, vm));
+
+					vm->RegisterFunction(new NativeFunction3<StaticFunctionTag, void, UInt32, UInt32, Float32>("PlayerHit", "F4MP", PlayerHit, vm));
 
 					return true;
 				}))
@@ -274,6 +328,33 @@ namespace f4mp
 			}
 
 			return true;
+		}
+
+		SInt32 GetAnimStateID(PlayerData* data)
+		{
+			return data->integers["animState"];
+		}
+
+		const std::string& GetAnimState(PlayerData* data)
+		{
+			return animStates[GetAnimStateID(data)];
+		}
+
+		void SetAnimStateID(PlayerData* data, SInt32 stateID)
+		{
+			data->integers["animState"] = stateID;
+		}
+
+		void SetAnimState(PlayerData* data, const std::string& state)
+		{
+			std::string lowerState(state.length(), '\0');
+
+			for (size_t i = 0; i < state.length(); i++)
+			{
+				lowerState[i] = tolower(state[i]);
+			}
+
+			SetAnimStateID(data, animStateIDs[lowerState]);
 		}
 
 		static int GetWalkDir(const zpl_vec2& displacement, float lookAngle)
@@ -600,6 +681,8 @@ namespace f4mp
 
 		static void OnEntityCreate(librg_event* event)
 		{
+			_MESSAGE("entity with ID '%d' has created", event->entity->id);
+
 			PlayerData* data = new PlayerData();
 			event->entity->user_data = data;
 
@@ -622,8 +705,7 @@ namespace f4mp
 			}
 
 			F4MP& self = GetInstance();
-			_MESSAGE("entity with ID '%d' has created", event->entity->id);
-
+			
 			auto& npcs = (*g_dataHandler)->arrNPC_;
 			for (UInt32 i = 0; i < npcs.count; i++)
 			{
@@ -670,7 +752,9 @@ namespace f4mp
 			data->numbers["angleY"] = librg_data_rf32(event->data);
 			data->numbers["angleZ"] = librg_data_rf32(event->data);
 
-			data->integers["animState"] = librg_data_ri32(event->data);
+			data->numbers["health"] = librg_data_rf32(event->data);
+
+			self.SetAnimStateID(data, librg_data_ri32(event->data));
 		}
 
 		static void OnEntityRemove(librg_event* event)
@@ -710,31 +794,31 @@ namespace f4mp
 				return;
 			}
 
-			SInt32 animState = data->integers["animState"];
-			if (animState != self.animStateIDs["JumpUp"] || animState != self.animStateIDs["JumpFall"])
+			const std::string& animState = self.GetAnimState(data);
+			if (animState != "JumpUp" && animState != "JumpFall" && animState != "FireWeapon")
 			{
 				zpl_vec2 displacement{ event->entity->position.x - self.prevPosition.x, event->entity->position.y - self.prevPosition.y };
-				SInt32 newAnimState;
+				const char* newAnimState;
 
 				switch (GetWalkDir(displacement, data->numbers["angleZ"]))
 				{
 				case 0:
-					newAnimState = self.animStateIDs["JogForward"];
+					newAnimState = "JogForward";
 					break;
 				case 1:
-					newAnimState = self.animStateIDs["JogBackward"];
+					newAnimState = "JogBackward";
 					break;
 				case 2:
-					newAnimState = self.animStateIDs["JogLeft"];
+					newAnimState = "JogLeft";
 					break;
 				case 3:
-					newAnimState = self.animStateIDs["JogRight"];
+					newAnimState = "JogRight";
 					break;
 				default:
-					newAnimState = 0;
+					newAnimState = "None";
 				}
 
-				data->integers["animState"] = newAnimState;
+				self.SetAnimState(data, newAnimState);
 			}
 
 			self.prevPosition = event->entity->position;
@@ -743,7 +827,34 @@ namespace f4mp
 			librg_data_wf32(event->data, data->numbers["angleY"]);
 			librg_data_wf32(event->data, data->numbers["angleZ"]);
 
-			librg_data_wi32(event->data, data->integers["animState"]);
+			librg_data_wf32(event->data, data->numbers["health"]);
+			
+			librg_data_wi32(event->data, self.GetAnimStateID(data));
+			
+			if (self.GetAnimState(data) == "FireWeapon")
+			{
+				self.SetAnimState(data, "None");
+			}
+		}
+
+		static void OnHit(librg_message* msg)
+		{
+			_MESSAGE("OnHit");
+
+			HitData data;
+			librg_data_rptr(msg->data, &data, sizeof(HitData));
+
+			F4MP& self = GetInstance();
+			self.papyrus->GetExternalEventRegistrations("OnPlayerHit", &data, [](UInt64 handle, const char* scriptName, const char* callbackName, void* dataPtr)
+				{
+					F4MP& self = GetInstance();
+					
+					HitData* data = static_cast<HitData*>(dataPtr);
+					if (data->hittee == self.playerEntityID)
+					{
+						SendPapyrusEvent1<Float32>(handle, scriptName, callbackName, data->damage);
+					}
+				});
 		}
 
 		static bool Connect(StaticFunctionTag* base, Actor* player, TESNPC* playerActorBase, BSFixedString address, SInt32 port)
@@ -854,7 +965,7 @@ namespace f4mp
 			}
 
 			PlayerData* data = (PlayerData*)entity->user_data;
-			data->integers["animState"] = self.animStateIDs[animState.c_str()];
+			self.SetAnimState(data, animState.c_str());
 		}
 
 		static Float32 GetEntVarNum(StaticFunctionTag* base, UInt32 entityID, BSFixedString name)
@@ -884,7 +995,7 @@ namespace f4mp
 			}
 
 			PlayerData* data = (PlayerData*)entity->user_data;
-			return self.animStates[data->integers["animState"]].c_str();
+			return self.GetAnimState(data).c_str();
 		}
 
 		static Float32 Atan2(StaticFunctionTag* base, Float32 y, Float32 x)
@@ -940,7 +1051,7 @@ namespace f4mp
 		//	dest->unk158 = src->unk158;
 		//	dest->partName = src->partName;
 		//}
-
+		
 		static void CopyAppearance(StaticFunctionTag* base, TESNPC* src, TESNPC* dest)
 		{
 			AppearanceData appearance;
@@ -953,6 +1064,14 @@ namespace f4mp
 			WornItemsData wornItems;
 			wornItems.Fill(src);
 			SetWornItems(dest, wornItems);
+		}
+		
+		static void PlayerHit(StaticFunctionTag* base, UInt32 hitter, UInt32 hittee, Float32 damage)
+		{
+			F4MP& self = GetInstance();
+
+			HitData data{ hitter, hittee, damage };
+			librg_message_send_all(&self.ctx, Message::Hit, &data, sizeof(HitData));
 		}
 	};
 }
