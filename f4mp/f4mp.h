@@ -291,7 +291,7 @@ namespace f4mp
 					vm->RegisterFunction(new NativeFunction3<StaticFunctionTag, BSFixedString, Float32, Float32, Float32>("GetWalkDir", "F4MP", _GetWalkDir, vm));
 
 					vm->RegisterFunction(new NativeFunction1<StaticFunctionTag, BGSAction*, BSFixedString>("GetAction", "F4MP",
-						[](StaticFunctionTag* base, BSFixedString name)
+						[](StaticFunctionTag* base, BSFixedString name) -> BGSAction*
 						{
 							auto& actions = (*g_dataHandler)->arrAACT;
 							for (UInt32 i = 0; i < actions.count; i++)
@@ -301,6 +301,8 @@ namespace f4mp
 									return actions[i];
 								}
 							}
+
+							return nullptr;
 						}, vm));
 
 					vm->RegisterFunction(new NativeFunction1 < StaticFunctionTag, void, VMArray<TESForm*>>("Inspect", "F4MP",

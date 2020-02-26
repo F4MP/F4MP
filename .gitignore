@@ -34,3 +34,13 @@
 *.log
 *.tlog
 *.cache
+
+.vs/
+
+f4se/
+f4se_common/
+f4se_loader/
+f4se_loader_common/
+x64/
+x64_vc11/
+xbyak/
