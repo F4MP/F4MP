@@ -10,7 +10,8 @@ namespace f4mp
 {
 	enum Message : u16
 	{
-		Hit = LIBRG_EVENT_LAST + 1u
+		Hit = LIBRG_EVENT_LAST + 1u,
+		FireWeapon
 	};
 
 	struct HitData

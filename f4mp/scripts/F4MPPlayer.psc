@@ -301,7 +301,8 @@ Event OnTimer(int aiTimerID)
 			; Debug.Notification(entityID + " " + position[0] + " " + position[1] + " " + position[2])
 		Else
 			If initialized
-				Delete()
+				Debug.Trace("entity with ID " + entityID + " is supposed to be deleted but I saved it for ya! ;)")
+				;Delete()
 			EndIf
 			; Debug.Notification(entityID + "!")
 		EndIf

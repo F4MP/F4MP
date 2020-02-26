@@ -108,9 +108,9 @@
     <PostBuildEvent>
       <Command>copy "$(TargetPath)" "D:\SteamLibrary\steamapps\common\Fallout 4\Data\F4SE\Plugins\$(TargetFileName)"
 copy "$(ProjectDir)\scripts\F4MP.psc" "D:\SteamLibrary\steamapps\common\Fallout 4\Data\Scripts\Source\User\F4MP.psc"
-copy "$(ProjectDir)\scripts\F4MP.psc" "D:\SteamLibrary\steamapps\common\Fallout 4\Data\Scripts\Source\User\F4MPFirePoint.psc"
-copy "$(ProjectDir)\scripts\F4MP.psc" "D:\SteamLibrary\steamapps\common\Fallout 4\Data\Scripts\Source\User\F4MPPlayer.psc"
-copy "$(ProjectDir)\scripts\F4MP.psc" "D:\SteamLibrary\steamapps\common\Fallout 4\Data\Scripts\Source\User\F4MPQuest.psc"</Command>
+copy "$(ProjectDir)\scripts\F4MPFirePoint.psc" "D:\SteamLibrary\steamapps\common\Fallout 4\Data\Scripts\Source\User\F4MPFirePoint.psc"
+copy "$(ProjectDir)\scripts\F4MPPlayer.psc" "D:\SteamLibrary\steamapps\common\Fallout 4\Data\Scripts\Source\User\F4MPPlayer.psc"
+copy "$(ProjectDir)\scripts\F4MPQuest.psc" "D:\SteamLibrary\steamapps\common\Fallout 4\Data\Scripts\Source\User\F4MPQuest.psc"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">

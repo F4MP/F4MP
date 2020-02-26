@@ -165,6 +165,11 @@ namespace f4mp
             librg_message_send_to(msg->ctx, Hit, librg_entity_control_get(msg->ctx, data.hittee), &data, sizeof(HitData));
         }
 
+        static void OnFireWeapon(librg_message* msg)
+        {
+            librg_log("on_fire_weapon: %u\n", msg->peer->connectID);
+        }
+
     public:
         Server(const std::string& address)
         {
@@ -193,6 +198,7 @@ namespace f4mp
             librg_event_add(&ctx, LIBRG_ENTITY_REMOVE, on_entity_remove);
 
             librg_network_add(&ctx, Message::Hit, OnHit);
+            librg_network_add(&ctx, Message::FireWeapon, OnFireWeapon);
 
             librg_network_start(&ctx, librg_address{ 7779, const_cast<char*>(address.c_str()) });
 

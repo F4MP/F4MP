@@ -16,6 +16,7 @@
 
 #include <memory>
 #include <vector>
+#include <queue>
 #include <unordered_set>
 #include <unordered_map>
 #include <functional>
@@ -102,6 +103,14 @@ namespace f4mp
 		};
 	}
 
+	struct FrameData
+	{
+		std::unordered_map<std::string, Float32> numbers;
+		std::unordered_map<std::string, SInt32> integers;
+
+		std::vector<HitData> events;
+	};
+
 	struct PlayerData
 	{
 		std::unordered_map<std::string, Float32> numbers;
@@ -137,12 +146,20 @@ namespace f4mp
 	public:
 		static F4MP& GetInstance()
 		{
-			if (!instance)
+			while (instances.size() <= activeInstance)
 			{
-				instance = std::make_unique<F4MP>();
+				instances.push_back(std::make_unique<F4MP>());
+				if (instances.size() > 1)
+				{
+					F4MP& mainInstance = *instances.front();
+					F4MP& newInstance = *instances.back();
+					newInstance.messaging = mainInstance.messaging;
+					newInstance.papyrus = mainInstance.papyrus;
+					newInstance.task = mainInstance.task;
+				}
 			}
 
-			return *instance;
+			return *instances[activeInstance];
 		}
 
 		F4MP() : ctx{}, port(0), playerEntityID((UInt32)-1), handle(kPluginHandle_Invalid), messaging(nullptr), papyrus(nullptr), task(nullptr),
@@ -228,9 +245,12 @@ namespace f4mp
 				}
 				}
 			});*/
-
+			
 			if (!papyrus->Register([](VirtualMachine* vm)
 				{
+					vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, UInt32>("GetClientInstanceID", "F4MP", GetClientInstanceID, vm));
+					vm->RegisterFunction(new NativeFunction1<StaticFunctionTag, void, UInt32>("SetClient", "F4MP", SetClient, vm));
+
 					vm->RegisterFunction(new NativeFunction4<StaticFunctionTag, bool, Actor*, TESNPC*, BSFixedString, SInt32>("Connect", "F4MP", Connect, vm));
 					vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, bool>("Disconnect", "F4MP", Disconnect, vm));
 					vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("Tick", "F4MP", Tick, vm));
@@ -284,7 +304,8 @@ namespace f4mp
 					vm->RegisterFunction(new NativeFunction2<StaticFunctionTag, void, Actor*, Actor*>("CopyWornItems", "F4MP", CopyWornItems, vm));
 
 					vm->RegisterFunction(new NativeFunction3<StaticFunctionTag, void, UInt32, UInt32, Float32>("PlayerHit", "F4MP", PlayerHit, vm));
-
+					vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("PlayerFireWeapon", "F4MP", PlayerFireWeapon, vm));
+					
 					return true;
 				}))
 			{
@@ -573,7 +594,8 @@ namespace f4mp
 		}
 
 	private:
-		static std::unique_ptr<F4MP> instance;
+		static std::vector<std::unique_ptr<F4MP>> instances;
+		static size_t activeInstance;
 
 		std::string address;
 		SInt32 port;
@@ -595,6 +617,8 @@ namespace f4mp
 
 		std::vector<std::string> animStates;
 		std::unordered_map<std::string, SInt32> animStateIDs;
+
+		std::queue<FrameData> records;
 
 		static void OnConnectRequest(librg_event* event)
 		{
@@ -820,6 +844,16 @@ namespace f4mp
 					}
 				});
 		}
+		
+		static UInt32 GetClientInstanceID(StaticFunctionTag* base)
+		{
+			return activeInstance;
+		}
+
+		static void SetClient(StaticFunctionTag* base, UInt32 instance)
+		{
+			activeInstance = instance;
+		}
 
 		static bool Connect(StaticFunctionTag* base, Actor* player, TESNPC* playerActorBase, BSFixedString address, SInt32 port)
 		{
@@ -1036,6 +1070,12 @@ namespace f4mp
 
 			HitData data{ hitter, hittee, damage };
 			librg_message_send_all(&self.ctx, Message::Hit, &data, sizeof(HitData));
+		}
+
+		static void PlayerFireWeapon(StaticFunctionTag* base)
+		{
+			F4MP& self = GetInstance();
+			librg_message_send_all(&self.ctx, Message::FireWeapon, nullptr, 0);
 		}
 	};
 }

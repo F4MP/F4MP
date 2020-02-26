@@ -116,6 +116,10 @@ Event OnKeyDown(int keyCode)
 		RegisterForExternalEvent("OnClientUpdate", "OnClientUpdate")
 
 		RegisterForExternalEvent("OnPlayerHit", "OnPlayerHit")
+
+		RegisterForKey(113)
+	ElseIf keyCode == 113
+		F4MP.SetClient(1 - F4MP.GetClientInstanceID())
 	EndIf
 EndEvent
 
@@ -130,6 +134,7 @@ Event OnAnimationEvent(ObjectReference akSource, string asEventName)
 		; 	F4MP.SetEntVarAnim(playerEntityID, "JumpLand")
 		ElseIf asEventName == "weaponFire"
 			F4MP.SetEntVarAnim(playerEntityID, "FireWeapon")
+			F4MP.PlayerFireWeapon()
 		EndIf
 	EndIf
 EndEvent
