@@ -93,7 +93,7 @@
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeaderFile>
       </PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>$(SolutionDir);$(SolutionDir)\..;$(ProjectDir)\thirdparty\enet\include;$(ProjectDir)\thirdparty\zpl\code;$(ProjectDir)\thirdparty\librg\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir);$(SolutionDir)\..;$(SolutionDir)\thirdparty\enet\include;$(SolutionDir)\thirdparty\zpl\code;$(SolutionDir)\thirdparty\librg\include</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <ForcedIncludeFiles>common/IPrefix.h;%(ForcedIncludeFiles)</ForcedIncludeFiles>
     </ClCompile>
