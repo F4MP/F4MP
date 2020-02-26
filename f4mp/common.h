@@ -1,6 +1,6 @@
 #pragma once
 
-#include "librg.h"
+#include <librg.h>
 
 #include <vector>
 #include <string>
@@ -8,6 +8,53 @@
 
 namespace f4mp
 {
+	enum Message : u16
+	{
+		Hit = LIBRG_EVENT_LAST + 1u
+	};
+
+	struct HitData
+	{
+		u32 hitter, hittee;
+		f32 damage;
+	};
+
+	struct AppearanceData
+	{
+		bool female;
+		std::vector<f32> weights;
+		std::string hairColor;
+		std::vector<std::string> headParts;
+		std::vector<f32> morphSetValue;
+		std::vector<u32> morphRegionData1;
+		std::vector<std::vector<f32>> morphRegionData2;
+		std::vector<u32> morphSetData1;
+		std::vector<f32> morphSetData2;
+
+		void Clear()
+		{
+			headParts.clear();
+			morphSetValue.clear();
+			morphRegionData1.clear();
+			morphRegionData2.clear();
+			morphSetData1.clear();
+			morphSetData2.clear();
+		}
+	};
+
+	struct WornItemsData
+	{
+		std::vector<u8> data1;
+		std::vector<std::string> data2;
+
+		void Clear()
+		{
+			//data.clear();
+			data1.clear();
+			data2.clear();
+		}
+	};
+
 	// TODO: the ones for tuple seem to be broken
 
 	class Utils

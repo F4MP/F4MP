@@ -80,12 +80,21 @@
     <None Include="scripts\F4MP.psc">
       <Filter>scripts</Filter>
     </None>
+    <None Include="scripts\F4MPFirePoint.psc">
+      <Filter>scripts</Filter>
+    </None>
+    <None Include="scripts\F4MPPlayer.psc">
+      <Filter>scripts</Filter>
+    </None>
+    <None Include="scripts\F4MPQuest.psc">
+      <Filter>scripts</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="f4mp.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="Utils.h">
+    <ClInclude Include="common.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
   </ItemGroup>

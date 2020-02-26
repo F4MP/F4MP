@@ -20,6 +20,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "f4se_loader_common", "f4se_
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "f4mp", "f4mp\f4mp.vcxproj", "{F021FA50-A159-46F9-8455-B079C458E5AF}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "f4mp_server", "f4mp_server\f4mp_server.vcxproj", "{F7829BAB-3A87-4637-91A2-FE95D1650579}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -74,6 +76,14 @@ Global
 		{F021FA50-A159-46F9-8455-B079C458E5AF}.Release|x64.Build.0 = Release|x64
 		{F021FA50-A159-46F9-8455-B079C458E5AF}.Release|x86.ActiveCfg = Release|Win32
 		{F021FA50-A159-46F9-8455-B079C458E5AF}.Release|x86.Build.0 = Release|Win32
+		{F7829BAB-3A87-4637-91A2-FE95D1650579}.Debug|x64.ActiveCfg = Debug|x64
+		{F7829BAB-3A87-4637-91A2-FE95D1650579}.Debug|x64.Build.0 = Debug|x64
+		{F7829BAB-3A87-4637-91A2-FE95D1650579}.Debug|x86.ActiveCfg = Debug|Win32
+		{F7829BAB-3A87-4637-91A2-FE95D1650579}.Debug|x86.Build.0 = Debug|Win32
+		{F7829BAB-3A87-4637-91A2-FE95D1650579}.Release|x64.ActiveCfg = Release|x64
+		{F7829BAB-3A87-4637-91A2-FE95D1650579}.Release|x64.Build.0 = Release|x64
+		{F7829BAB-3A87-4637-91A2-FE95D1650579}.Release|x86.ActiveCfg = Release|Win32
+		{F7829BAB-3A87-4637-91A2-FE95D1650579}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

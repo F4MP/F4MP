@@ -10,7 +10,7 @@
 #include "f4se/GameExtraData.h"
 #include "f4se/GameRTTI.h"
 
-#include "Utils.h"
+#include "common.h"
 
 #include <librg.h>
 
@@ -23,130 +23,92 @@
 
 namespace f4mp
 {
-	enum Message : u16
+	namespace client
 	{
-		Hit = LIBRG_EVENT_LAST + 1u
-	};
-
-	struct HitData
-	{
-		u32 hitter, hittee;
-		f32 damage;
-	};
-
-	struct AppearanceData
-	{
-		bool female;
-		std::vector<f32> weights;
-		std::string hairColor;
-		std::vector<std::string> headParts;
-		std::vector<f32> morphSetValue;
-		std::vector<u32> morphRegionData1;
-		std::vector<std::vector<f32>> morphRegionData2;
-		std::vector<u32> morphSetData1;
-		std::vector<f32> morphSetData2;
-
-		void Clear()
+		struct AppearanceData : public f4mp::AppearanceData
 		{
-			headParts.clear();
-			morphSetValue.clear();
-			morphRegionData1.clear();
-			morphRegionData2.clear();
-			morphSetData1.clear();
-			morphSetData2.clear();
-		}
-
-		void Fill(TESNPC* actorBase)
-		{
-			Clear();
-
-			female = CALL_MEMBER_FN(actorBase, GetSex)() == 1;
-			weights = { actorBase->weightThin, actorBase->weightMuscular, actorBase->weightLarge };
-			hairColor = actorBase->headData->hairColor->fullName.name;
-
-			for (UInt8 i = 0; i < actorBase->numHeadParts; i++)
+			void Fill(TESNPC* actorBase)
 			{
-				headParts.push_back(actorBase->headParts[i]->partName.c_str());
-			}
+				Clear();
 
-			for (UInt32 i = 0; i < actorBase->morphSetValue->count; i++)
-			{
-				morphSetValue.push_back((*actorBase->morphSetValue)[i]);
-			}
+				female = CALL_MEMBER_FN(actorBase, GetSex)() == 1;
+				weights = { actorBase->weightThin, actorBase->weightMuscular, actorBase->weightLarge };
+				hairColor = actorBase->headData->hairColor->fullName.name;
 
-			actorBase->morphRegionData->ForEach([=](TESNPC::FaceMorphRegion* region)
+				for (UInt8 i = 0; i < actorBase->numHeadParts; i++)
 				{
-					//morphRegionData.push_back(std::make_tuple(region->index, std::vector<f32>(&region->value[0], &region->value[8])));
-					morphRegionData1.push_back(region->index);
-					morphRegionData2.push_back(std::vector<f32>(&region->value[0], &region->value[8]));
-					return true;
-				});
+					headParts.push_back(actorBase->headParts[i]->partName.c_str());
+				}
 
-			actorBase->morphSetData->ForEach([&](TESNPC::MorphSetData* data)
+				for (UInt32 i = 0; i < actorBase->morphSetValue->count; i++)
 				{
-					//morphSetData.push_back(std::make_tuple(data->key, data->value));
-					morphSetData1.push_back(data->key);
-					morphSetData2.push_back(data->value);
-					return true;
-				});
-		}
-	};
+					morphSetValue.push_back((*actorBase->morphSetValue)[i]);
+				}
 
-	struct WornItemsData
-	{
-		std::vector<u8> data1;
-		std::vector<std::string> data2;
-
-		void Clear()
-		{
-			//data.clear();
-			data1.clear();
-			data2.clear();
-		}
-
-		void Fill(Actor* actor)
-		{
-			Clear();
-
-			for (UInt32 i = 0; i < ActorEquipData::kMaxSlots; i++)
-			{
-				TESForm* item = actor->equipData->slots[i].item;
-				if (item)
-				{
-					/*if (std::find_if(data.begin(), data.end(), [&](const std::tuple<u8, std::string>& wornItem)
-						{
-							return std::get<0>(wornItem) == item->formType && std::get<1>(wornItem).compare(item->GetFullName()) == 0;
-						}) == data.end())
+				actorBase->morphRegionData->ForEach([=](TESNPC::FaceMorphRegion* region)
 					{
-						data.push_back(std::make_pair(item->formType, item->GetFullName()));
-					}*/
+						//morphRegionData.push_back(std::make_tuple(region->index, std::vector<f32>(&region->value[0], &region->value[8])));
+						morphRegionData1.push_back(region->index);
+						morphRegionData2.push_back(std::vector<f32>(&region->value[0], &region->value[8]));
+						return true;
+					});
 
-					size_t j;
-					for (j = 0; j < data1.size(); j++)
+				actorBase->morphSetData->ForEach([&](TESNPC::MorphSetData* data)
 					{
-						if (data1[j] == item->formType && data2[j].compare(item->GetFullName()) == 0)
+						//morphSetData.push_back(std::make_tuple(data->key, data->value));
+						morphSetData1.push_back(data->key);
+						morphSetData2.push_back(data->value);
+						return true;
+					});
+			}
+		};
+
+		struct WornItemsData : public f4mp::WornItemsData
+		{
+			void Fill(Actor* actor)
+			{
+				Clear();
+
+				for (UInt32 i = 0; i < ActorEquipData::kMaxSlots; i++)
+				{
+					TESForm* item = actor->equipData->slots[i].item;
+					if (item)
+					{
+						/*if (std::find_if(data.begin(), data.end(), [&](const std::tuple<u8, std::string>& wornItem)
+							{
+								return std::get<0>(wornItem) == item->formType && std::get<1>(wornItem).compare(item->GetFullName()) == 0;
+							}) == data.end())
 						{
-							break;
+							data.push_back(std::make_pair(item->formType, item->GetFullName()));
+						}*/
+
+						size_t j;
+						for (j = 0; j < data1.size(); j++)
+						{
+							if (data1[j] == item->formType && data2[j].compare(item->GetFullName()) == 0)
+							{
+								break;
+							}
 						}
-					}
 
-					if (j == data1.size())
-					{
-						data1.push_back(item->formType);
-						data2.push_back(item->GetFullName());
+						if (j == data1.size())
+						{
+							data1.push_back(item->formType);
+							data2.push_back(item->GetFullName());
+						}
 					}
 				}
 			}
-		}
-	};
+		};
+	}
 
 	struct PlayerData
 	{
 		std::unordered_map<std::string, Float32> numbers;
 		std::unordered_map<std::string, SInt32> integers;
 
-		AppearanceData appearance;
-		WornItemsData wornItems;
+		client::AppearanceData appearance;
+		client::WornItemsData wornItems;
 
 		PlayerData()
 		{
@@ -620,8 +582,8 @@ namespace f4mp
 
 		zpl_vec3 prevPosition;
 
-		AppearanceData playerAppearance;
-		WornItemsData playerWornItems;
+		client::AppearanceData playerAppearance;
+		client::WornItemsData playerWornItems;
 
 		librg_ctx ctx;
 
@@ -1056,14 +1018,14 @@ namespace f4mp
 		
 		static void CopyAppearance(StaticFunctionTag* base, TESNPC* src, TESNPC* dest)
 		{
-			AppearanceData appearance;
+			client::AppearanceData appearance;
 			appearance.Fill(src);
 			SetAppearance(dest, appearance);
 		}
 
 		static void CopyWornItems(StaticFunctionTag* base, Actor* src, Actor* dest)
 		{
-			WornItemsData wornItems;
+			client::WornItemsData wornItems;
 			wornItems.Fill(src);
 			SetWornItems(dest, wornItems);
 		}
