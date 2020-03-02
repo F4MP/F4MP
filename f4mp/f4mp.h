@@ -109,6 +109,7 @@ namespace f4mp
 		std::unordered_map<std::string, SInt32> integers;
 
 		std::vector<HitData> events;
+		int weaponFires = 0; // TODO: temporary
 	};
 
 	struct PlayerData
@@ -770,11 +771,11 @@ namespace f4mp
 			F4MP& self = GetInstance();
 
 			self.papyrus->GetExternalEventRegistrations("OnClientUpdate", event, [](UInt64 handle, const char* scriptName, const char* callbackName, void* dataPtr)
-			{
-				librg_event* event = static_cast<librg_event*>(dataPtr);
-				UInt32 id = event->entity->id;
-				SendPapyrusEvent1<UInt32>(handle, scriptName, callbackName, id);
-			});
+				{
+					librg_event* event = static_cast<librg_event*>(dataPtr);
+					UInt32 id = event->entity->id;
+					SendPapyrusEvent1<UInt32>(handle, scriptName, callbackName, id);
+				});
 
 			PlayerData* data = (PlayerData*)event->entity->user_data;
 			if (!data)
@@ -811,14 +812,59 @@ namespace f4mp
 
 			self.prevPosition = event->entity->position;
 
-			librg_data_wf32(event->data, data->numbers["angleX"]);
-			librg_data_wf32(event->data, data->numbers["angleY"]);
-			librg_data_wf32(event->data, data->numbers["angleZ"]);
+			if (activeInstance == 0 && self.records.size() > 0)
+			{
+				FrameData replay = self.records.front();
+				self.records.pop();
 
-			librg_data_wf32(event->data, data->numbers["health"]);
-			
-			librg_data_wi32(event->data, self.GetAnimStateID(data));
-			
+				librg_data_wf32(event->data, replay.numbers["angleX"]);
+				librg_data_wf32(event->data, replay.numbers["angleY"]);
+				librg_data_wf32(event->data, replay.numbers["angleZ"]);
+
+				librg_data_wf32(event->data, replay.numbers["health"]);
+
+				librg_data_wi32(event->data, replay.integers["animState"]);
+
+				// TODO: temporary
+				
+				for (HitData& hitData : replay.events)
+				{
+					librg_message_send_all(&self.ctx, Message::Hit, &hitData, sizeof(HitData));
+				}
+
+				for (int i = 0; i < replay.weaponFires; i++)
+				{
+					librg_message_send_all(&self.ctx, Message::FireWeapon, nullptr, 0);
+				}
+			}
+			else
+			{
+				librg_data_wf32(event->data, data->numbers["angleX"]);
+				librg_data_wf32(event->data, data->numbers["angleY"]);
+				librg_data_wf32(event->data, data->numbers["angleZ"]);
+
+				librg_data_wf32(event->data, data->numbers["health"]);
+
+				librg_data_wi32(event->data, self.GetAnimStateID(data));
+
+				if (activeInstance > 0)
+				{
+					FrameData& record = self.records.back();
+
+					for (const auto& number : data->numbers)
+					{
+						record.numbers[number.first] = number.second;
+					}
+
+					for (const auto& integer : data->integers)
+					{
+						record.integers[integer.first] = integer.second;
+					}
+
+					self.records.push(FrameData());
+				}
+			}
+
 			if (self.GetAnimState(data) == "FireWeapon")
 			{
 				self.SetAnimState(data, "None");
@@ -886,8 +932,13 @@ namespace f4mp
 
 		static void Tick(StaticFunctionTag* base)
 		{
-			F4MP& self = GetInstance();
-			librg_tick(&self.ctx);
+			//F4MP& self = GetInstance();
+			//librg_tick(&self.ctx);
+
+			for (auto& instance : instances)
+			{
+				librg_tick(&instance->ctx);
+			}
 		}
 
 		static UInt32 GetPlayerEntityID(StaticFunctionTag* base)
@@ -1069,13 +1120,31 @@ namespace f4mp
 			F4MP& self = GetInstance();
 
 			HitData data{ hitter, hittee, damage };
-			librg_message_send_all(&self.ctx, Message::Hit, &data, sizeof(HitData));
+
+			// TODO: temporary
+			if (activeInstance == 0)
+			{
+				librg_message_send_all(&self.ctx, Message::Hit, &data, sizeof(HitData));
+			}
+			else
+			{
+				self.records.back().events.push_back(data);
+			}
 		}
 
 		static void PlayerFireWeapon(StaticFunctionTag* base)
 		{
 			F4MP& self = GetInstance();
-			librg_message_send_all(&self.ctx, Message::FireWeapon, nullptr, 0);
+
+			// TODO: temporary
+			if (activeInstance == 0)
+			{
+				librg_message_send_all(&self.ctx, Message::FireWeapon, nullptr, 0);
+			}
+			else
+			{
+				self.records.back().weaponFires++;
+			}
 		}
 	};
 }
