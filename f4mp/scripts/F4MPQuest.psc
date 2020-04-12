@@ -6,18 +6,15 @@ ActorBase Property f4mpPlayerBase Auto
 
 ActorValue Property healthAV Auto
 
-; int[] playerIDs
-; F4MPPlayer[] players
+int[] playerIDs
+F4MPPlayer[] players
 
 Event OnInit()
-	; playerIDs = new int[0]
-	; players = new F4MPPlayer[0]	
-
 	RegisterForKey(112)
 EndEvent
 
 Function OnEntityCreate(int entityID, Form[] itemsToWear)
-	;Debug.Notification(entityID + " has entered the world.")
+	Debug.Notification(entityID + " has entered the world.")
 
 	If entityID != F4MP.GetPlayerEntityID()
 		Actor player = Game.GetPlayer()
@@ -27,8 +24,8 @@ Function OnEntityCreate(int entityID, Form[] itemsToWear)
 		entity.itemsToWear = itemsToWear
 		; SetWornItems(entity, itemsToWear)
 	
-		; playerIDs.Add(entityID)
-		; players.Add(entity)
+		playerIDs.Add(entityID)
+		players.Add(entity)
 	EndIf
 EndFunction
 
@@ -50,14 +47,14 @@ Function OnEntityUpdate(int entityID)
 EndFunction
 
 Function OnEntityRemove(int entityID)
-	; int index = playerIDs.Find(entityID)
-	; If index < 0
-	; 	return
-	; EndIf
+	int index = playerIDs.Find(entityID)
+	If index < 0
+		return
+	EndIf
 	
-	; players[index].KillEssential()
-	; playerIDs.Remove(index)
-	; players.Remove(index)
+	players[index].Delete()
+	playerIDs.Remove(index)
+	players.Remove(index)
 EndFunction
 
 Function OnClientUpdate(int entityID)
@@ -75,6 +72,15 @@ EndFunction
 
 Function OnPlayerHit(float damage)
 	Game.GetPlayer().DamageValue(healthAV, damage)
+EndFunction
+
+Function OnFireWeapon(int entityID)
+	int index = playerIDs.Find(entityID)
+	If index < 0
+		return
+	EndIf
+	
+	players[index].FireWeapon()
 EndFunction
 
 Function SetWornItems(Actor dest, Form[] wornItems)
@@ -97,8 +103,10 @@ EndFunction
 
 Event OnKeyDown(int keyCode)
 	If keyCode == 112
-		Connect("222.105.107.219", 7779)
-		; Connect("localhost", 7779)
+		Connect("localhost", 7779)
+
+		playerIDs = new int[0]
+		players = new F4MPPlayer[0]		
 
 		;Actor player = Game.GetPlayer()
 		;F4MPPlayer entity = player.PlaceActorAtMe(f4mpPlayerBase) as F4MPPlayer
@@ -117,6 +125,7 @@ Event OnKeyDown(int keyCode)
 		RegisterForExternalEvent("OnClientUpdate", "OnClientUpdate")
 
 		RegisterForExternalEvent("OnPlayerHit", "OnPlayerHit")
+		RegisterForExternalEvent("OnFireWeapon", "OnFireWeapon")
 
 		RegisterForKey(113)
 	ElseIf keyCode == 113
@@ -134,7 +143,7 @@ Event OnAnimationEvent(ObjectReference akSource, string asEventName)
 		; ElseIf asEventName == "JumpDown"
 		; 	F4MP.SetEntVarAnim(playerEntityID, "JumpLand")
 		ElseIf asEventName == "weaponFire"
-			F4MP.SetEntVarAnim(playerEntityID, "FireWeapon")
+			; F4MP.SetEntVarAnim(playerEntityID, "FireWeapon")
 			F4MP.PlayerFireWeapon()
 		EndIf
 	EndIf

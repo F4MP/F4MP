@@ -1,147 +1,14 @@
-#include "f4se/PapyrusNativeFunctions.h"
-#include "f4se/PluginAPI.h"
-#include "f4se/PapyrusEvents.h"
-#include "f4se/GameThreads.h"
-#include "f4se/GameObjects.h"
-#include "f4se/GameForms.h"
-#include "f4se/GameFormComponents.h"
-#include "f4se/GameData.h"
-#include "f4se/GameReferences.h"
-#include "f4se/GameExtraData.h"
-#include "f4se/GameRTTI.h"
-
-#include "common.h"
+#include "client.h"
 
 #include <librg.h>
 
 #include <memory>
 #include <vector>
-#include <queue>
-#include <unordered_set>
-#include <unordered_map>
 #include <functional>
 #include <algorithm>
 
 namespace f4mp
 {
-	namespace client
-	{
-		struct AppearanceData : public f4mp::AppearanceData
-		{
-			void Fill(TESNPC* actorBase)
-			{
-				Clear();
-
-				female = CALL_MEMBER_FN(actorBase, GetSex)() == 1;
-				weights = { actorBase->weightThin, actorBase->weightMuscular, actorBase->weightLarge };
-				hairColor = actorBase->headData->hairColor->fullName.name;
-
-				for (UInt8 i = 0; i < actorBase->numHeadParts; i++)
-				{
-					headParts.push_back(actorBase->headParts[i]->partName.c_str());
-				}
-
-				for (UInt32 i = 0; i < actorBase->morphSetValue->count; i++)
-				{
-					morphSetValue.push_back((*actorBase->morphSetValue)[i]);
-				}
-
-				actorBase->morphRegionData->ForEach([=](TESNPC::FaceMorphRegion* region)
-					{
-						//morphRegionData.push_back(std::make_tuple(region->index, std::vector<f32>(&region->value[0], &region->value[8])));
-						morphRegionData1.push_back(region->index);
-						morphRegionData2.push_back(std::vector<f32>(&region->value[0], &region->value[8]));
-						return true;
-					});
-
-				actorBase->morphSetData->ForEach([&](TESNPC::MorphSetData* data)
-					{
-						//morphSetData.push_back(std::make_tuple(data->key, data->value));
-						morphSetData1.push_back(data->key);
-						morphSetData2.push_back(data->value);
-						return true;
-					});
-			}
-		};
-
-		struct WornItemsData : public f4mp::WornItemsData
-		{
-			void Fill(Actor* actor)
-			{
-				Clear();
-
-				for (UInt32 i = 0; i < ActorEquipData::kMaxSlots; i++)
-				{
-					TESForm* item = actor->equipData->slots[i].item;
-					if (item)
-					{
-						/*if (std::find_if(data.begin(), data.end(), [&](const std::tuple<u8, std::string>& wornItem)
-							{
-								return std::get<0>(wornItem) == item->formType && std::get<1>(wornItem).compare(item->GetFullName()) == 0;
-							}) == data.end())
-						{
-							data.push_back(std::make_pair(item->formType, item->GetFullName()));
-						}*/
-
-						size_t j;
-						for (j = 0; j < data1.size(); j++)
-						{
-							if (data1[j] == item->formType && data2[j].compare(item->GetFullName()) == 0)
-							{
-								break;
-							}
-						}
-
-						if (j == data1.size())
-						{
-							data1.push_back(item->formType);
-							data2.push_back(item->GetFullName());
-						}
-					}
-				}
-			}
-		};
-	}
-
-	struct FrameData
-	{
-		std::unordered_map<std::string, Float32> numbers;
-		std::unordered_map<std::string, SInt32> integers;
-
-		std::vector<HitData> events;
-		int weaponFires = 0; // TODO: temporary
-	};
-
-	struct PlayerData
-	{
-		std::unordered_map<std::string, Float32> numbers;
-		std::unordered_map<std::string, SInt32> integers;
-
-		client::AppearanceData appearance;
-		client::WornItemsData wornItems;
-
-		PlayerData()
-		{
-
-		}
-	};
-
-	class Task : public ITaskDelegate
-	{
-	public:
-		Task(const std::function<void()>& callback) : callback(callback)
-		{
-
-		}
-
-		void Run() override
-		{
-			callback();
-		}
-
-		std::function<void()> callback;
-	};
-
 	class F4MP
 	{
 	public:
@@ -302,6 +169,8 @@ namespace f4mp
 							}
 						}, vm));
 
+					vm->RegisterFunction(new NativeFunction1<StaticFunctionTag, bool, BSFixedString>("AnimLoops", "F4MP", AnimLoops, vm));
+
 					vm->RegisterFunction(new NativeFunction2<StaticFunctionTag, void, TESNPC*, TESNPC*>("CopyAppearance", "F4MP", CopyAppearance, vm));
 					vm->RegisterFunction(new NativeFunction2<StaticFunctionTag, void, Actor*, Actor*>("CopyWornItems", "F4MP", CopyWornItems, vm));
 
@@ -334,14 +203,7 @@ namespace f4mp
 
 		void SetAnimState(PlayerData* data, const std::string& state)
 		{
-			std::string lowerState(state.length(), '\0');
-
-			for (size_t i = 0; i < state.length(); i++)
-			{
-				lowerState[i] = tolower(state[i]);
-			}
-
-			SetAnimStateID(data, animStateIDs[lowerState]);
+			SetAnimStateID(data, animStateIDs[Lower(state)]);
 		}
 
 		static int GetWalkDir(const zpl_vec2& displacement, float lookAngle)
@@ -364,28 +226,7 @@ namespace f4mp
 			zpl_f32 cross;
 			zpl_vec2_cross(&cross, lookDir, moveDir);
 
-			if (fabsf(dot) > cosf(45.f * deg2rad))
-			{
-				if (dot > 0.f)
-				{
-					return 0;
-				}
-				else
-				{
-					return 1;
-				}
-			}
-			else
-			{
-				if (cross > 0.f)
-				{
-					return 2;
-				}
-				else
-				{
-					return 3;
-				}
-			}
+			return fabsf(dot) > cosf(45.f * deg2rad) ? (dot > 0.f ? 0 : 1) : (cross > 0.f ? 2 : 3);
 		}
 
 		static void SetAppearance(TESNPC* actorBase, const AppearanceData& appearance)
@@ -620,8 +461,6 @@ namespace f4mp
 		std::vector<std::string> animStates;
 		std::unordered_map<std::string, SInt32> animStateIDs;
 
-		std::queue<FrameData> records;
-
 		static void OnConnectRequest(librg_event* event)
 		{
 			F4MP& self = GetInstance();
@@ -785,102 +624,47 @@ namespace f4mp
 			}
 
 			const std::string& animState = self.GetAnimState(data);
-			if (animState != "JumpUp" && animState != "JumpFall" && animState != "FireWeapon")
+
+			zpl_vec2 displacement = event->entity->position.xy - self.prevPosition.xy;
+			const char* newAnimState;
+
+			switch (GetWalkDir(displacement, data->numbers["angleZ"]))
 			{
-				zpl_vec2 displacement{ event->entity->position.x - self.prevPosition.x, event->entity->position.y - self.prevPosition.y };
-				const char* newAnimState;
-
-				switch (GetWalkDir(displacement, data->numbers["angleZ"]))
-				{
-				case 0:
-					newAnimState = "JogForward";
-					break;
-				case 1:
-					newAnimState = "JogBackward";
-					break;
-				case 2:
-					newAnimState = "JogLeft";
-					break;
-				case 3:
-					newAnimState = "JogRight";
-					break;
-				default:
-					newAnimState = "None";
-				}
-
-				self.SetAnimState(data, newAnimState);
+			case 0:
+				newAnimState = "JogForward";
+				break;
+			case 1:
+				newAnimState = "JogBackward";
+				break;
+			case 2:
+				newAnimState = "JogLeft";
+				break;
+			case 3:
+				newAnimState = "JogRight";
+				break;
+			default:
+				newAnimState = "None";
 			}
+
+			self.SetAnimState(data, newAnimState);
 
 			self.prevPosition = event->entity->position;
 
-			if (activeInstance == 0 && self.records.size() > 0)
-			{
-				FrameData replay = self.records.front();
-				self.records.pop();
+			librg_data_wf32(event->data, data->numbers["angleX"]);
+			librg_data_wf32(event->data, data->numbers["angleY"]);
+			librg_data_wf32(event->data, data->numbers["angleZ"]);
 
-				librg_data_wf32(event->data, replay.numbers["angleX"]);
-				librg_data_wf32(event->data, replay.numbers["angleY"]);
-				librg_data_wf32(event->data, replay.numbers["angleZ"]);
+			librg_data_wf32(event->data, data->numbers["health"]);
 
-				librg_data_wf32(event->data, replay.numbers["health"]);
-
-				librg_data_wi32(event->data, replay.integers["animState"]);
-
-				// TODO: temporary
-				
-				for (HitData& hitData : replay.events)
-				{
-					librg_message_send_all(&self.ctx, Message::Hit, &hitData, sizeof(HitData));
-				}
-
-				for (int i = 0; i < replay.weaponFires; i++)
-				{
-					librg_message_send_all(&self.ctx, Message::FireWeapon, nullptr, 0);
-				}
-			}
-			else
-			{
-				librg_data_wf32(event->data, data->numbers["angleX"]);
-				librg_data_wf32(event->data, data->numbers["angleY"]);
-				librg_data_wf32(event->data, data->numbers["angleZ"]);
-				
-				librg_data_wf32(event->data, data->numbers["health"]);
-				
-				librg_data_wi32(event->data, self.GetAnimStateID(data));
-
-				if (activeInstance > 0)
-				{
-					if (self.records.size() > 0)
-					{
-						FrameData& record = self.records.back();
-
-						for (const auto& number : data->numbers)
-						{
-							record.numbers[number.first] = number.second;
-						}
-
-						for (const auto& integer : data->integers)
-						{
-							record.integers[integer.first] = integer.second;
-						}
-					}
-
-					self.records.push(FrameData());
-				}
-			}
-
-			if (self.GetAnimState(data) == "FireWeapon")
-			{
-				self.SetAnimState(data, "None");
-			}
+			librg_data_wi32(event->data, self.GetAnimStateID(data));
 		}
 
 		static void OnHit(librg_message* msg)
 		{
-			_MESSAGE("OnHit");
-
 			HitData data;
 			librg_data_rptr(msg->data, &data, sizeof(HitData));
+
+			_MESSAGE("OnHit: %u -> %u", data.hitter, data.hittee);
 
 			F4MP& self = GetInstance();
 			self.papyrus->GetExternalEventRegistrations("OnPlayerHit", &data, [](UInt64 handle, const char* scriptName, const char* callbackName, void* dataPtr)
@@ -897,21 +681,18 @@ namespace f4mp
 
 		static void OnFireWeapon(librg_message* msg)
 		{
-			_MESSAGE("OnFireWeapon");
+			UInt32 entity;
+			librg_data_rptr(msg->data, &entity, sizeof(UInt32));
 
-			HitData data;
-			librg_data_rptr(msg->data, &data, sizeof(HitData));
+			_MESSAGE("OnFireWeapon: %u", entity);
 
 			F4MP& self = GetInstance();
-			self.papyrus->GetExternalEventRegistrations("OnPlayerHit", &data, [](UInt64 handle, const char* scriptName, const char* callbackName, void* dataPtr)
+			self.papyrus->GetExternalEventRegistrations("OnFireWeapon", &entity, [](UInt64 handle, const char* scriptName, const char* callbackName, void* dataPtr)
 				{
 					F4MP& self = GetInstance();
 
-					HitData* data = static_cast<HitData*>(dataPtr);
-					if (data->hittee == self.playerEntityID)
-					{
-						SendPapyrusEvent1<Float32>(handle, scriptName, callbackName, data->damage);
-					}
+					UInt32* data = static_cast<UInt32*>(dataPtr);
+					SendPapyrusEvent1<UInt32>(handle, scriptName, callbackName, *data);
 				});
 		}
 		
@@ -1004,6 +785,17 @@ namespace f4mp
 				return;
 			}
 
+			if (entityID == self.playerEntityID)
+			{
+				for (auto& instance : instances)
+				{
+					entity = librg_entity_fetch(&instance->ctx, instance->playerEntityID);
+					entity->position.x = x;
+					entity->position.y = y;
+					entity->position.z = z;
+				}
+			}
+
 			entity->position.x = x;
 			entity->position.y = y;
 			entity->position.z = z;
@@ -1094,6 +886,25 @@ namespace f4mp
 			}
 		}
 
+		static bool AnimLoops(StaticFunctionTag* base, BSFixedString animState)
+		{
+			std::string animStateName = Lower(animState.c_str());
+			
+			if (animStateName == "none")
+			{
+				return true;
+			}
+
+			if (animStateName.find("jog") != std::string::npos)
+			{
+				return true;
+			}
+			
+			// TOOD: add more
+			
+			return false;
+		}
+		
 		//static void CopyHeardPart(BGSHeadPart* src, BGSHeadPart*& dest)
 		//{
 		//	dest = (BGSHeadPart*)Heap_Allocate(sizeof(BGSHeadPart));
@@ -1145,30 +956,14 @@ namespace f4mp
 
 			HitData data{ hitter, hittee, damage };
 
-			// TODO: temporary
-			if (activeInstance == 0)
-			{
-				librg_message_send_all(&self.ctx, Message::Hit, &data, sizeof(HitData));
-			}
-			else if (self.records.size() > 0)
-			{
-				self.records.back().events.push_back(data);
-			}
+			librg_message_send_all(&self.ctx, Message::Hit, &data, sizeof(HitData));
 		}
 
 		static void PlayerFireWeapon(StaticFunctionTag* base)
 		{
 			F4MP& self = GetInstance();
 
-			// TODO: temporary
-			if (activeInstance == 0)
-			{
-				librg_message_send_all(&self.ctx, Message::FireWeapon, nullptr, 0);
-			}
-			else if (self.records.size() > 0)
-			{
-				self.records.back().weaponFires++;
-			}
+			librg_message_send_all(&self.ctx, Message::FireWeapon, &self.playerEntityID, sizeof(u32));
 		}
 	};
 }

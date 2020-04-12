@@ -21,14 +21,8 @@ namespace f4mp
     class Server
     {
     private:
-        static void on_connect_request(librg_event* event) {
-            //u32 secret = 0;// librg_data_ru32(event->data);
-
-            //if (secret != 42) {
-            //    librg_log("intruder!\n");
-            //    //librg_event_reject(event);
-            //}
-
+        static void on_connect_request(librg_event* event)
+        {
             Player* player = new Player{};
             event->user_data = player;
 
@@ -51,14 +45,13 @@ namespace f4mp
             librg_log("connection requested");
         }
 
-        static void on_connect_accepted(librg_event* event) {
+        static void on_connect_accepted(librg_event* event)
+        {
             librg_log("%d", event->user_data);
 
             librg_log("on_connect_accepted\n");
             librg_entity* blob = event->entity;
 
-            // blob->position.x = (float)(2000 - rand() % 4000);
-            // blob->position.y = (float)(2000 - rand() % 4000);
             blob->position = zpl_vec3{ 886.134460f, -426.953460f, -1550.012817f };
 
             librg_log("spawning player %u at: %f %f %f\n",
@@ -79,19 +72,22 @@ namespace f4mp
             event->entity->user_data = event->user_data;
         }
 
-        static void on_connect_refused(librg_event* event) {
+        static void on_connect_refused(librg_event* event)
+        {
             librg_log("on_connect_refused\n");
 
             delete (Player*)event->user_data;
         }
 
-        static void on_connect_disconnect(librg_event* event) {
+        static void on_connect_disconnect(librg_event* event)
+        {
             librg_log("entity %d peer disconnected: %x\n", event->entity->id, event->peer);
 
             delete (Player*)event->entity->user_data;
         }
 
-        static void on_entity_create(librg_event* event) {
+        static void on_entity_create(librg_event* event)
+        {
             Player* player = (Player*)event->entity->user_data;
             if (!player)
             {
@@ -115,7 +111,8 @@ namespace f4mp
             Utils::Write(event->data, playerWornItems.data2);
         }
 
-        static void on_entity_update(librg_event* event) {
+        static void on_entity_update(librg_event* event)
+        {
             Player* player = (Player*)event->entity->user_data;
             if (!player)
             {
@@ -131,11 +128,13 @@ namespace f4mp
             librg_data_wi32(event->data, player->animState);
         }
 
-        static void on_entity_remove(librg_event* event) {
+        static void on_entity_remove(librg_event* event)
+        {
             librg_log("remove ent %d for client %x\n", event->entity->id, event->peer);
         }
 
-        static void on_update(librg_event* e) {
+        static void on_update(librg_event* e)
+        {
             Player* player = (Player*)e->entity->user_data;
             if (!player)
             {
@@ -162,12 +161,15 @@ namespace f4mp
             HitData data;
             librg_data_rptr(msg->data, &data, sizeof(HitData));
 
-            librg_message_send_to(msg->ctx, Hit, librg_entity_control_get(msg->ctx, data.hittee), &data, sizeof(HitData));
+            librg_message_send_to(msg->ctx, Message::Hit, librg_entity_control_get(msg->ctx, data.hittee), &data, sizeof(HitData));
         }
 
         static void OnFireWeapon(librg_message* msg)
         {
-            librg_log("on_fire_weapon: %u\n", msg->peer->connectID);
+            u32 entity;
+            librg_data_rptr(msg->data, &entity, sizeof(u32));
+
+            librg_message_send_except(msg->ctx, Message::FireWeapon, librg_entity_control_get(msg->ctx, entity), &entity, sizeof(u32));
         }
 
     public:
@@ -203,23 +205,6 @@ namespace f4mp
             librg_network_start(&ctx, librg_address{ 7779, const_cast<char*>(address.c_str()) });
 
             librg_log("server started!");
-
-            // for (isize i = 0; i < 1; i++) {
-            //     librg_entity *enemy = librg_entity_create(&ctx, 0);
-
-            //     //librg_attach_foo(&ctx, enemy, NULL);
-            //     // enemy->position.x = (float)(2000 - rand() % 4000);
-            //     // enemy->position.x = (float)(2000 - rand() % 4000);
-            //     enemy->position.x = 10;
-            //     enemy->position.y = 10;
-
-            //     batid = enemy->id;
-            // }
-
-            //zpl_timer* tick_timer = zpl_timer_add(ctx.timers);
-            //tick_timer->user_data = (void*)&ctx; /* provide ctx as a argument to timer */
-            //zpl_timer_set(tick_timer, 1.0, -1, measure);
-            //zpl_timer_start(tick_timer, 1.0);
 
             while (true) {
                 librg_tick(&ctx);

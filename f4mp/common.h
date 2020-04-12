@@ -224,4 +224,17 @@ namespace f4mp
 			}
 		}
 	};
+
+	template<class T>
+	std::string Lower(const T& string)
+	{
+		std::string lower = string;
+
+		for (size_t i = 0; i < lower.length(); i++)
+		{
+			lower[i] = tolower(lower[i]);
+		}
+
+		return lower;
+	}
 }

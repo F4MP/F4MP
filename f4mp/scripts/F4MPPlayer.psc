@@ -164,36 +164,36 @@ Event OnKeyDown(int keyCode)
 		;PlayIdle(animIdle)
 		;Utility.Wait(0.5)
 
-		Idle animToPlay = None
+		;Idle animToPlay = None
 
-		If stage == 0
-			animToPlay = animJogForward
-		ElseIf stage == 1
-			animToPlay = animFireWeapon
-		ElseIf stage == 2
-			animToPlay = animJumpUp
-		ElseIf stage == 3
-			animToPlay = animIdle
-		EndIf
-		stage = (stage + 1) % 4
+		;If stage == 0
+		;	animToPlay = animJogForward
+		;ElseIf stage == 1
+		;	animToPlay = animFireWeapon
+		;ElseIf stage == 2
+		;	animToPlay = animJumpUp
+		;ElseIf stage == 3
+		;	animToPlay = animIdle
+		;EndIf
+		;stage = (stage + 1) % 4
 
-		If animToPlay != animIdle
-			PlayIdle(animNull)
-			Utility.Wait(0.3)
-		EndIf
+		;If animToPlay != animIdle
+		;	PlayIdle(animNull)
+		;	Utility.Wait(0.3)
+		;EndIf
 
-		If !IsWeaponDrawn()
-			If GetEquippedWeapon() != myWeapon
-				EquipItem(myWeapon)
-				Utility.Wait(0.1)
-			EndIf
-			DrawWeapon()
-			Utility.Wait(0.4)
-		EndIf
+		;If !IsWeaponDrawn()
+		;	If GetEquippedWeapon() != myWeapon
+		;		EquipItem(myWeapon)
+		;		Utility.Wait(0.1)
+		;	EndIf
+		;	DrawWeapon()
+		;	Utility.Wait(0.4)
+		;EndIf
 
-		PlayIdle(animToPlay)
+		;PlayIdle(animToPlay)
 
-		TranslateTo(x + 10.0, y, z, 0, 0, 0, 0.01)
+		;TranslateTo(x + 10.0, y, z, 0, 0, 0, 0.01)
 	EndIf
 EndEvent
 
@@ -277,11 +277,17 @@ Event OnTimer(int aiTimerID)
 	ElseIf aiTimerID == animTimerID
 		string newAnimState = F4MP.GetEntVarAnim(entityID)
 		If newAnimState != animState
+			string oldAnimState = animState
 			animState = newAnimState
 
 			If !IsWeaponDrawn()
 				DrawWeapon()
 				Utility.Wait(0.4)
+			EndIf
+
+			If F4MP.AnimLoops(oldAnimState)
+				PlayIdle(animNull)
+				Utility.Wait(0.2)
 			EndIf
 
 			PlayAnimByState(newAnimState)
@@ -295,7 +301,7 @@ Event OnTimer(int aiTimerID)
 		EndIf
 
 		If !IsWeaponDrawn()
-			animState = "None"
+			animState = "INIT"
 		EndIf
 
 		;string[] animStates = new string[0]
@@ -341,22 +347,32 @@ Event OnTimer(int aiTimerID)
 	EndIf
 EndEvent
 
+Function FireWeapon()
+	Weapon equippedWeapon = GetEquippedWeapon()
+	If equippedWeapon
+		F4MPFirePoint newFirePoint = PlaceAtMe(firePoint) as F4MPFirePoint
+		newFirePoint.myWeapon = equippedWeapon
+		newFirePoint.myAmmo = equippedWeapon.GetAmmo()
+		newFirePoint.myOwner = self
+	EndIf
+EndFunction
+
 Function PlayAnimByState(string newAnimState)
 	Idle animToPlay = GetAnimByState(newAnimState)
 	If animToPlay
 		PlayIdle(animToPlay)
 	EndIf
 
-	If newAnimState == "FireWeapon"
-		Weapon equippedWeapon = GetEquippedWeapon()
-		If equippedWeapon
-			F4MPFirePoint newFirePoint = PlaceAtMe(firePoint) as F4MPFirePoint
-			newFirePoint.myWeapon = equippedWeapon
-			newFirePoint.myAmmo = equippedWeapon.GetAmmo()
-			newFirePoint.myOwner = self
-		EndIf
-		animState = "None"
-	EndIf
+	;If newAnimState == "FireWeapon"
+	;	Weapon equippedWeapon = GetEquippedWeapon()
+	;	If equippedWeapon
+	;		F4MPFirePoint newFirePoint = PlaceAtMe(firePoint) as F4MPFirePoint
+	;		newFirePoint.myWeapon = equippedWeapon
+	;		newFirePoint.myAmmo = equippedWeapon.GetAmmo()
+	;		newFirePoint.myOwner = self
+	;	EndIf
+	;	animState = "INIT"
+	;EndIf
 EndFunction
 
 Idle Function GetAnimByState(string newAnimState)

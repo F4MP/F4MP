@@ -3,13 +3,27 @@
 #include "Server.h"
 
 #include <iostream>
+#include <fstream>
 
 int main()
 {
-    std::string address;
+	const std::string configFilePath = "server_config.txt";
+	std::string address;
 
-    std::cout << "address? ";
-    std::cin >> address;
+	std::ifstream config(configFilePath);
+	if (config)
+	{
+		config >> address;
+		config.close();
+	}
+	else
+	{
+		std::cout << "address? ";
+		std::cin >> address;
+		
+		std::ofstream file(configFilePath);
+		file << address;
+	}
 
     f4mp::Server* server = new f4mp::Server(address);
 
