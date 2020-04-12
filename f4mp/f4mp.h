@@ -210,6 +210,7 @@ namespace f4mp
 			librg_event_add(&ctx, LIBRG_CLIENT_STREAMER_UPDATE, OnClientUpdate);
 
 			librg_network_add(&ctx, Message::Hit, OnHit);
+			librg_network_add(&ctx, Message::FireWeapon, OnFireWeapon);
 		}
 
 		virtual ~F4MP()
@@ -842,23 +843,26 @@ namespace f4mp
 				librg_data_wf32(event->data, data->numbers["angleX"]);
 				librg_data_wf32(event->data, data->numbers["angleY"]);
 				librg_data_wf32(event->data, data->numbers["angleZ"]);
-
+				
 				librg_data_wf32(event->data, data->numbers["health"]);
-
+				
 				librg_data_wi32(event->data, self.GetAnimStateID(data));
 
 				if (activeInstance > 0)
 				{
-					FrameData& record = self.records.back();
-
-					for (const auto& number : data->numbers)
+					if (self.records.size() > 0)
 					{
-						record.numbers[number.first] = number.second;
-					}
+						FrameData& record = self.records.back();
 
-					for (const auto& integer : data->integers)
-					{
-						record.integers[integer.first] = integer.second;
+						for (const auto& number : data->numbers)
+						{
+							record.numbers[number.first] = number.second;
+						}
+
+						for (const auto& integer : data->integers)
+						{
+							record.integers[integer.first] = integer.second;
+						}
 					}
 
 					self.records.push(FrameData());
@@ -882,7 +886,27 @@ namespace f4mp
 			self.papyrus->GetExternalEventRegistrations("OnPlayerHit", &data, [](UInt64 handle, const char* scriptName, const char* callbackName, void* dataPtr)
 				{
 					F4MP& self = GetInstance();
-					
+
+					HitData* data = static_cast<HitData*>(dataPtr);
+					if (data->hittee == self.playerEntityID)
+					{
+						SendPapyrusEvent1<Float32>(handle, scriptName, callbackName, data->damage);
+					}
+				});
+		}
+
+		static void OnFireWeapon(librg_message* msg)
+		{
+			_MESSAGE("OnFireWeapon");
+
+			HitData data;
+			librg_data_rptr(msg->data, &data, sizeof(HitData));
+
+			F4MP& self = GetInstance();
+			self.papyrus->GetExternalEventRegistrations("OnPlayerHit", &data, [](UInt64 handle, const char* scriptName, const char* callbackName, void* dataPtr)
+				{
+					F4MP& self = GetInstance();
+
 					HitData* data = static_cast<HitData*>(dataPtr);
 					if (data->hittee == self.playerEntityID)
 					{
@@ -1126,7 +1150,7 @@ namespace f4mp
 			{
 				librg_message_send_all(&self.ctx, Message::Hit, &data, sizeof(HitData));
 			}
-			else
+			else if (self.records.size() > 0)
 			{
 				self.records.back().events.push_back(data);
 			}
@@ -1141,7 +1165,7 @@ namespace f4mp
 			{
 				librg_message_send_all(&self.ctx, Message::FireWeapon, nullptr, 0);
 			}
-			else
+			else if (self.records.size() > 0)
 			{
 				self.records.back().weaponFires++;
 			}

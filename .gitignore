@@ -47,3 +47,6 @@ x64/
 x64_vc11/
 xbyak/
 
+f4mp/scripts/.vscode/.ropeproject/config.py
+f4mp/scripts/.vscode/.ropeproject/objectdb
+f4mp/scripts/.vscode/settings.json

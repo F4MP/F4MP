@@ -97,7 +97,8 @@ EndFunction
 
 Event OnKeyDown(int keyCode)
 	If keyCode == 112
-		Connect("localhost", 7779)
+		Connect("222.105.107.219", 7779)
+		; Connect("localhost", 7779)
 
 		;Actor player = Game.GetPlayer()
 		;F4MPPlayer entity = player.PlaceActorAtMe(f4mpPlayerBase) as F4MPPlayer

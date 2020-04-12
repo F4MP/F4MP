@@ -27,10 +27,10 @@ Actor Property playerRef Auto
 ActorValue Property HealthAV Auto
 
 int tickTimerID = 10
-int drawTimerID = 20
+int animTimerID = 20
 int tidyTimerID = 30
 
-string animState = "None"
+string animState = "INIT"
 
 Form[] Property itemsToWear = None Auto
 
@@ -49,6 +49,7 @@ int stage = 0
 
 Event OnInit()
 	StartTimer(0, tickTimerID)
+	StartTimer(0, animTimerID)
 	StartTimer(0, tidyTimerID)
 
 	RegisterForKey(113)
@@ -158,7 +159,7 @@ Event OnKeyDown(int keyCode)
 		;equippedWeapon.Fire(equippedWeaponRef, equippedWeaponAmmo)
 		
 		;DrawWeapon()
-		;StartTimer(0.5, drawTimerID)
+		;StartTimer(0.5, animTimerID)
 
 		;PlayIdle(animIdle)
 		;Utility.Wait(0.5)
@@ -262,54 +263,40 @@ Event OnTimer(int aiTimerID)
 
 			;health = F4MP.GetEntVarNum(entityID, "health")
 
-			string newAnimState = F4MP.GetEntVarAnim(entityID)
-			If newAnimState != animState
-				If animState != "FireWeapon"
-					animState = newAnimState
-	
-					If GetEquippedWeapon() != weaponEquipped
-						EquipItem(weaponEquipped)
-					EndIf
-	
-					If IsWeaponDrawn()
-						;If newAnimState == "None"
-						;	PlayAnimByState(newAnimState)
-						;Else
-							PlayIdle(animNull)		
-							;StartTimer(0.3, drawTimerID)
-							Utility.Wait(0.3)
-							If newAnimState == animState
-								PlayAnimByState(newAnimState)
-							EndIf
-						;EndIf
-					Else
-						DrawWeapon()
-	
-						PlayIdle(animNull)
-						;StartTimer(0.4, drawTimerID)
-						Utility.Wait(0.4)
-						If newAnimState == animState
-							PlayAnimByState(newAnimState)
-						EndIf
-					EndIf
-				EndIf
-			EndIf
-
 			TranslateTo(position[0], position[1], position[2], 0.0, 0.0, angleZ, distance * 3.0, 200.0)
 			;self.SetAngle(0.0, 0.0, angleZ)
 
 			; Debug.Notification(entityID + " " + position[0] + " " + position[1] + " " + position[2])
 		Else
 			If initialized
-				Debug.Trace("entity with ID " + entityID + " is supposed to be deleted but I saved it for ya! ;)")
-				;Delete()
+				;Debug.Trace("entity with ID " + entityID + " is supposed to be deleted but I saved it for ya! ;)")
+				Delete()
 			EndIf
 			; Debug.Notification(entityID + "!")
 		EndIf
-	ElseIf aiTimerID == drawTimerID
-		PlayAnimByState(animState)
+	ElseIf aiTimerID == animTimerID
+		string newAnimState = F4MP.GetEntVarAnim(entityID)
+		If newAnimState != animState
+			animState = newAnimState
+
+			If !IsWeaponDrawn()
+				DrawWeapon()
+				Utility.Wait(0.4)
+			EndIf
+
+			PlayAnimByState(newAnimState)
+		EndIf
+		StartTimer(0, animTimerID)
 	Elseif aiTimerID == tidyTimerID
 		StartTimer(0, tidyTimerID)
+
+		If GetEquippedWeapon() != weaponEquipped
+			EquipItem(weaponEquipped)
+		EndIf
+
+		If !IsWeaponDrawn()
+			animState = "None"
+		EndIf
 
 		;string[] animStates = new string[0]
 		;animStates.Add("None")
@@ -331,7 +318,7 @@ Event OnTimer(int aiTimerID)
 		;		;	PlayAnimByState(newAnimState)
 		;		;Else
 		;			PlayIdle(animNull)		
-		;			;StartTimer(0.3, drawTimerID)
+		;			;StartTimer(0.3, animTimerID)
 		;			Utility.Wait(0.3)
 		;			PlayAnimByState(newAnimState)
 		;		;EndIf
@@ -339,7 +326,7 @@ Event OnTimer(int aiTimerID)
 		;		DrawWeapon()
 		;
 		;		PlayIdle(animNull)
-		;		;StartTimer(0.4, drawTimerID)
+		;		;StartTimer(0.4, animTimerID)
 		;		Utility.Wait(0.4)
 		;		PlayAnimByState(newAnimState)
 		;	EndIf
@@ -376,7 +363,7 @@ Idle Function GetAnimByState(string newAnimState)
 	Idle animToPlay = animIdle
 
 	If newAnimState == "None"
-		; animToPlay = animIdle
+		animToPlay = animIdle
 	ElseIf newAnimState == "JogForward" 
 		animToPlay = animJogForward
 	ElseIf newAnimState == "JogBackward" 
@@ -386,7 +373,7 @@ Idle Function GetAnimByState(string newAnimState)
 	ElseIf newAnimState == "JogRight" 
 		animToPlay = animJogRight
 	ElseIf newAnimState == "JumpUp" 
-		animToPlay = animJumpUp
+		; animToPlay = animJumpUp
 	ElseIf newAnimState == "JumpFall" 
 		; animToPlay = animJumpFall
 	ElseIf newAnimState == "JumpLand" 
