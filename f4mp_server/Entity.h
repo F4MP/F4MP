@@ -13,6 +13,7 @@ namespace f4mp
 		template<class T> static T* GetAs(librg_entity* entity);
 		template<class T> static T* GetAs(librg_event* event);
 
+		static Entity* Create(librg_entity* entity);
 		static Entity* Create(librg_event* event);
 
 		virtual ~Entity();

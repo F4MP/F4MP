@@ -58,12 +58,12 @@ bool f4mp::Animation::Loops(SInt32 id)
 {
 	std::string animStateName = GetStateName(id);
 
-	if (animStateName == "none")
+	if (animStateName == "None")
 	{
 		return true;
 	}
-
-	if (animStateName.find("jog") != std::string::npos)
+	
+	if (animStateName.find("Jog") != std::string::npos)
 	{
 		return true;
 	}

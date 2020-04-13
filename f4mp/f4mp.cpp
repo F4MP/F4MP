@@ -605,6 +605,6 @@ void f4mp::F4MP::PlayerFireWeapon(StaticFunctionTag* base)
 void f4mp::F4MP::AddEntity(StaticFunctionTag* base, TESObjectREFR* ref)
 {
 	F4MP& self = GetInstance();
-
+	
 	librg_message_send_all(&self.ctx, MessageType::AddEntity, &ref->formID, sizeof(UInt32));
 }

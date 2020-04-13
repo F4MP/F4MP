@@ -80,6 +80,8 @@ void f4mp::Player::OnClientUpdate(librg_event* event)
 
 	const std::string& animState = GetAnimState();
 
+	// TODO: move this to the Animation class.
+
 	zpl_vec2 displacement = event->entity->position.xy - prevPosition.xy;
 	const char* newAnimState;
 

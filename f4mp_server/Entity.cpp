@@ -1,4 +1,6 @@
 #include "Entity.h"
+#include "Player.h"
+#include "NPC.h"
 
 f4mp::Entity* f4mp::Entity::Get(librg_entity* entity)
 {
@@ -15,9 +17,29 @@ f4mp::Entity* f4mp::Entity::Get(librg_event* event)
 	return Get(event->entity);
 }
 
+f4mp::Entity* f4mp::Entity::Create(librg_entity* entity)
+{
+	Entity* ent = nullptr;
+
+	switch (entity->type)
+	{
+	case EntityType::Player:
+		ent = new Player();
+		break;
+
+	case EntityType::NPC:
+		ent = new NPC();
+		break;
+	}
+
+	entity->user_data = ent;
+
+	return ent;
+}
+
 f4mp::Entity* f4mp::Entity::Create(librg_event* event)
 {
-	return nullptr;
+	return Create(event->entity);
 }
 
 f4mp::Entity::~Entity()

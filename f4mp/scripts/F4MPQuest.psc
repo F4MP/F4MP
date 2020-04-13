@@ -182,6 +182,10 @@ Event OnTimer(int aiTimerID)
 		Actor randomActor = Game.FindRandomActorFromRef(Game.GetPlayer(), 10000.0)
 		If actors.Find(randomActor) < 0
 			actors.Add(randomActor)
+
+			If randomActor as F4MPPlayer == None && randomActor != Game.GetPlayer()
+				; add entity
+			EndIf
 		EndIf
 	EndIf
 EndEvent

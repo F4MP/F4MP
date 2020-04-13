@@ -42,48 +42,90 @@ namespace f4mp
             enet_peer_timeout(event->peer, UINT32_MAX, UINT32_MAX, UINT32_MAX);
             librg_entity_control_set(event->ctx, event->entity->id, event->peer);
             librg_entity_visibility_set(event->ctx, event->entity->id, LIBRG_ALWAYS_VISIBLE);
-
+            
             librg_log("%p\n", event->user_data);
 
             event->entity->user_data = event->user_data;
 
-            Entity::Get(event)->OnConnectAccept(event);
+            Entity* entity = Entity::Get(event);
+            if (!entity)
+            {
+                return;
+            }
+            
+            entity->OnConnectAccept(event);
         }
 
         static void on_connect_refused(librg_event* event)
         {
             librg_log("on_connect_refused\n");
 
-            ((Player*)event->user_data)->OnConnectRefuse(event);
+            Player* player = (Player*)event->user_data;
+            if (!player)
+            {
+                return;
+            }
+
+            player->OnConnectRefuse(event);
         }
 
         static void on_connect_disconnect(librg_event* event)
         {
             librg_log("entity %d peer disconnected: %x\n", event->entity->id, event->peer);
 
-            Entity::Get(event)->OnDisonnect(event);
+            Entity* entity = Entity::Get(event);
+            if (!entity)
+            {
+                return;
+            }
+
+            entity->OnDisonnect(event);
         }
 
         static void on_entity_create(librg_event* event)
         {
-            Entity::Get(event)->OnEntityCreate(event);
+            Entity* entity = Entity::Get(event);
+            if (!entity)
+            {
+                return;
+            }
+
+            entity->OnEntityCreate(event);
         }
 
         static void on_entity_update(librg_event* event)
         {
-            Entity::Get(event)->OnEntityUpdate(event);
+            Entity* entity = Entity::Get(event);
+            if (!entity)
+            {
+                return;
+            }
+
+            entity->OnEntityUpdate(event);
         }
 
         static void on_entity_remove(librg_event* event)
         {
             librg_log("remove ent %d for client %x\n", event->entity->id, event->peer);
 
-            Entity::Get(event)->OnEntityRemove(event);
+            Entity* entity = Entity::Get(event);
+            if (!entity)
+            {
+                return;
+            }
+
+            entity->OnEntityRemove(event);
         }
 
-        static void on_update(librg_event* e)
+        static void on_update(librg_event* event)
         {
-            Entity::Get(e)->OnClientUpdate(e);
+            Entity* entity = Entity::Get(event);
+            if (!entity)
+            {
+                return;
+            }
+
+            entity->OnClientUpdate(event);
         }
 
         static void OnHit(librg_message* msg)
@@ -111,6 +153,8 @@ namespace f4mp
 
             librg_entity* entity = librg_entity_create(msg->ctx, EntityType::NPC);
             librg_entity_control_set(msg->ctx, entity->id, msg->peer);
+            
+            Entity::Create(entity);
         }
 
     public:
