@@ -97,7 +97,7 @@ namespace f4mp
 		};
 	}
 
-	struct PlayerData
+	/*struct PlayerData
 	{
 		std::unordered_map<std::string, Float32> numbers;
 		std::unordered_map<std::string, SInt32> integers;
@@ -109,7 +109,7 @@ namespace f4mp
 		{
 
 		}
-	};
+	};*/
 
 	class Task : public ITaskDelegate
 	{

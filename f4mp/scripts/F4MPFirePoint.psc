@@ -13,8 +13,9 @@ EndEvent
 Event OnLoad()
 	SetMotionType(Motion_Keyframed)
 	
+	float[] position = F4MP.GetEntityPosition(myOwner.entityID)
 	float angleZ = GetAngleZ()
-	SetPosition(x + Math.Sin(angleZ) * 100.0 + Math.Cos(angleZ) * 10.0, y + Math.Cos(angleZ) * 100.0 - Math.Sin(angleZ) * 10.0, z + 90.0)
+	SetPosition(position[0] + Math.Sin(angleZ) * 100.0 + Math.Cos(angleZ) * 10.0, position[1] + Math.Cos(angleZ) * 100.0 - Math.Sin(angleZ) * 10.0, position[2] + 90.0)
 
 	float ax = F4MP.GetEntVarNum(myOwner.entityID, "angleX")
 	float ay = F4MP.GetEntVarNum(myOwner.entityID, "angleY")
