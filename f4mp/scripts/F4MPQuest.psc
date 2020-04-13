@@ -1,6 +1,7 @@
 Scriptname F4MPQuest extends Quest
 
 int tickTimerID = 10
+int queryTimerID = 20
 
 ActorBase Property f4mpPlayerBase Auto
 
@@ -8,6 +9,8 @@ ActorValue Property healthAV Auto
 
 int[] playerIDs
 F4MPPlayer[] players
+
+Actor[] actors
 
 Event OnInit()
 	RegisterForKey(112)
@@ -108,6 +111,11 @@ Event OnKeyDown(int keyCode)
 		playerIDs = new int[0]
 		players = new F4MPPlayer[0]		
 
+		If actors == None
+			actors = new Actor[0]
+			StartTimer(0, queryTimerID)
+		EndIf
+
 		;Actor player = Game.GetPlayer()
 		;F4MPPlayer entity = player.PlaceActorAtMe(f4mpPlayerBase) as F4MPPlayer
 		
@@ -128,6 +136,7 @@ Event OnKeyDown(int keyCode)
 		RegisterForExternalEvent("OnFireWeapon", "OnFireWeapon")
 
 		RegisterForKey(113)
+		RegisterForKey(114)
 	ElseIf keyCode == 113
 		F4MP.SetClient(1 - F4MP.GetClientInstanceID())
 	EndIf
@@ -167,6 +176,12 @@ Event OnTimer(int aiTimerID)
 		F4MP.Tick()
 
 		; Debug.Notification(F4MP.GetPlayerEntityID() + " " + player.GetPositionX() + " " + player.GetPositionY() + " " + player.GetPositionZ())
+	ElseIf aiTimerID == queryTimerID
+		StartTimer(0, queryTimerID)
+
+		Actor randomActor = Game.FindRandomActorFromRef(Game.GetPlayer(), 10000.0)
+		If actors.Find(randomActor) < 0
+			actors.Add(randomActor)
+		EndIf
 	EndIf
 EndEvent
-

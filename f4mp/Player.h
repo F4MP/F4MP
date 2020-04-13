@@ -1,13 +1,14 @@
 #pragma once
 
-#include "client.h"
+#include "Entity.h"
+
 #include "Animation.h"
 
 #include <memory>
 
 namespace f4mp
 {
-	class Player
+	class Player : public Entity
 	{
 	private:
 		std::unique_ptr<Animation> animation;
@@ -19,13 +20,12 @@ namespace f4mp
 		client::AppearanceData appearance;
 		client::WornItemsData wornItems;
 
+		// TODO: might wanna move them to the Entity class.
+		// NOTE: in that case, fix the ~EntVar~ functions to also work with the Entity class.
 		std::unordered_map<std::string, Float32> numbers;
 		std::unordered_map<std::string, SInt32> integers;
 
 	public:
-		static Player* Get(librg_event* event);
-		static Player* Get(librg_entity* entity);
-
 		static int GetWalkDir(const zpl_vec2& displacement, float lookAngle);
 		
 		static void SetAppearance(TESNPC* actorBase, const AppearanceData& appearance);
@@ -34,15 +34,15 @@ namespace f4mp
 		Player();
 
 		void OnConnect(Actor* player, TESNPC* playerActorBase);
-		void OnConnectRequest(librg_event* event);
-		void OnConnectAccept(librg_event* event);
-		void OnDisonnect(librg_event* event);
+		void OnConnectRequest(librg_event* event) override;
+		void OnConnectAccept(librg_event* event) override;
+		void OnDisonnect(librg_event* event) override;
 
-		void OnEntityCreate(librg_event* event);
-		void OnEntityUpdate(librg_event* event);
-		void OnEntityRemove(librg_event* event);
+		void OnEntityCreate(librg_event* event) override;
+		void OnEntityUpdate(librg_event* event) override;
+		void OnEntityRemove(librg_event* event) override;
 
-		void OnClientUpdate(librg_event* event);
+		void OnClientUpdate(librg_event* event) override;
 
 		Float32 GetNumber(const std::string& name) const;
 		SInt32 GetInteger(const std::string& name) const;
@@ -57,7 +57,7 @@ namespace f4mp
 		UInt32 GetEntityID() const;
 		const client::AppearanceData& GetAppearance() const;
 		const client::WornItemsData& GetWornItems() const;
-
+		
 		float GetLookAngle() const;
 	};
 }

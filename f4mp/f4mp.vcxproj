@@ -190,6 +190,7 @@ copy "$(ProjectDir)\scripts\F4MPQuest.psc" "D:\SteamLibrary\steamapps\common\Fal
     <ClCompile Include="..\f4se\PapyrusValue.cpp" />
     <ClCompile Include="..\f4se\PapyrusVM.cpp" />
     <ClCompile Include="Animation.cpp" />
+    <ClCompile Include="Entity.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="f4mp.cpp" />
     <ClCompile Include="Player.cpp" />
@@ -198,8 +199,10 @@ copy "$(ProjectDir)\scripts\F4MPQuest.psc" "D:\SteamLibrary\steamapps\common\Fal
     <ClInclude Include="Animation.h" />
     <ClInclude Include="client.h" />
     <ClInclude Include="Clone.h" />
+    <ClInclude Include="Entity.h" />
     <ClInclude Include="f4mp.h" />
     <ClInclude Include="common.h" />
+    <ClInclude Include="NPC.h" />
     <ClInclude Include="Player.h" />
   </ItemGroup>
   <ItemGroup>

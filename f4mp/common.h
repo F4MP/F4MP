@@ -8,10 +8,23 @@
 
 namespace f4mp
 {
-	enum Message : u16
+	struct MessageType
 	{
-		Hit = LIBRG_EVENT_LAST + 1u,
-		FireWeapon
+		enum : u16
+		{
+			Hit = LIBRG_EVENT_LAST + 1u,
+			FireWeapon,
+			AddEntity
+		};
+	};
+
+	struct EntityType
+	{
+		enum : u32
+		{
+			Player = 0,
+			NPC
+		};
 	};
 
 	struct HitData

@@ -97,20 +97,6 @@ namespace f4mp
 		};
 	}
 
-	/*struct PlayerData
-	{
-		std::unordered_map<std::string, Float32> numbers;
-		std::unordered_map<std::string, SInt32> integers;
-
-		client::AppearanceData appearance;
-		client::WornItemsData wornItems;
-
-		PlayerData()
-		{
-
-		}
-	};*/
-
 	class Task : public ITaskDelegate
 	{
 	public:

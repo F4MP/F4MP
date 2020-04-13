@@ -50,8 +50,8 @@ f4mp::F4MP::F4MP() : ctx{}, port(0), handle(kPluginHandle_Invalid), messaging(nu
 
 	librg_event_add(&ctx, LIBRG_CLIENT_STREAMER_UPDATE, OnClientUpdate);
 
-	librg_network_add(&ctx, Message::Hit, OnHit);
-	librg_network_add(&ctx, Message::FireWeapon, OnFireWeapon);
+	librg_network_add(&ctx, MessageType::Hit, OnHit);
+	librg_network_add(&ctx, MessageType::FireWeapon, OnFireWeapon);
 
 	player = std::make_unique<Player>();
 }
@@ -115,7 +115,7 @@ bool f4mp::F4MP::Init(const F4SEInterface* f4se)
 
 			vm->RegisterFunction(new NativeFunction2<StaticFunctionTag, Float32, Float32, Float32>("Atan2", "F4MP", Atan2, vm));
 
-			vm->RegisterFunction(new NativeFunction3<StaticFunctionTag, BSFixedString, Float32, Float32, Float32>("GetWalkDir", "F4MP", _GetWalkDir, vm));
+			vm->RegisterFunction(new NativeFunction3<StaticFunctionTag, BSFixedString, Float32, Float32, Float32>("GetWalkDir", "F4MP", GetWalkDir, vm));
 
 			vm->RegisterFunction(new NativeFunction1<StaticFunctionTag, BGSAction*, BSFixedString>("GetAction", "F4MP",
 				[](StaticFunctionTag* base, BSFixedString name) -> BGSAction*
@@ -162,6 +162,17 @@ bool f4mp::F4MP::Init(const F4SEInterface* f4se)
 	Animation::Init();
 
 	return true;
+}
+
+librg_entity* f4mp::F4MP::FetchEntity(UInt32 id, const std::string& errorMsg)
+{
+	librg_entity* entity = librg_entity_fetch(&ctx, id);
+	if (!entity)
+	{
+		_ERROR(errorMsg.c_str(), id);
+	}
+
+	return entity;
 }
 
 std::vector<TESForm*> f4mp::F4MP::DecodeWornItems(const WornItemsData& wornItems)
@@ -243,24 +254,9 @@ void f4mp::F4MP::OnEntityCreate(librg_event* event)
 {
 	_MESSAGE("entity with ID '%d' has created", event->entity->id);
 
-	Player* player = new Player();
-	player->OnEntityCreate(event);
+	Entity::Create(event);
 
-	struct Tmp
-	{
-		UInt32 id;
-		const WornItemsData& wornItems;
-	} tmp{ event->entity->id, player->GetWornItems() };
-
-	F4MP& self = F4MP::GetInstance();
-
-	self.papyrus->GetExternalEventRegistrations("OnEntityCreate", &tmp, [](UInt64 handle, const char* scriptName, const char* callbackName, void* dataPtr)
-		{
-			Tmp* tmp = static_cast<Tmp*>(dataPtr);
-			VMArray<TESForm*> wornItems(F4MP::DecodeWornItems(tmp->wornItems));
-
-			SendPapyrusEvent2<UInt32, VMArray<TESForm*>>(handle, scriptName, callbackName, tmp->id, wornItems);
-		});
+	// The Papyrus event "OnEntityCreate" is proccessed by the Player class.
 }
 
 void f4mp::F4MP::OnEntityUpdate(librg_event* event)
@@ -274,7 +270,7 @@ void f4mp::F4MP::OnEntityUpdate(librg_event* event)
 			SendPapyrusEvent1<UInt32>(handle, scriptName, callbackName, id);
 		});
 
-	Player* entity = Player::Get(event);
+	Entity* entity = Entity::Get(event);
 	if (!entity)
 	{
 		return;
@@ -285,7 +281,7 @@ void f4mp::F4MP::OnEntityUpdate(librg_event* event)
 
 void f4mp::F4MP::OnEntityRemove(librg_event* event)
 {
-	Player* entity = Player::Get(event);
+	Entity* entity = Entity::Get(event);
 	if (entity)
 	{
 		entity->OnEntityRemove(event);
@@ -313,13 +309,13 @@ void f4mp::F4MP::OnClientUpdate(librg_event* event)
 			SendPapyrusEvent1<UInt32>(handle, scriptName, callbackName, id);
 		});
 
-	Player* player = Player::Get(event);
-	if (!player)
+	Entity* entity = Entity::Get(event);
+	if (!entity)
 	{
 		return;
 	}
 
-	player->OnClientUpdate(event);
+	entity->OnClientUpdate(event);
 }
 
 void f4mp::F4MP::OnHit(librg_message* msg)
@@ -426,10 +422,9 @@ VMArray<Float32> f4mp::F4MP::GetEntityPosition(StaticFunctionTag* base, UInt32 e
 	F4MP& self = GetInstance();
 	std::vector<Float32> result{ -1, -1, -1 };
 
-	librg_entity* entity = librg_entity_fetch(&self.ctx, entityID);
+	librg_entity* entity = self.FetchEntity(entityID);
 	if (!entity)
 	{
-		_ERROR("no entity with ID '%d'!", entityID);
 		return VMArray<Float32>(result);
 	}
 
@@ -441,10 +436,9 @@ void f4mp::F4MP::SetEntityPosition(StaticFunctionTag* base, UInt32 entityID, flo
 {
 	F4MP& self = GetInstance();
 
-	librg_entity* entity = librg_entity_fetch(&self.ctx, entityID);
+	librg_entity* entity = self.FetchEntity(entityID);
 	if (!entity)
 	{
-		_ERROR("no entity with ID '%d'!", entityID);
 		return;
 	}
 
@@ -454,7 +448,7 @@ void f4mp::F4MP::SetEntityPosition(StaticFunctionTag* base, UInt32 entityID, flo
 	{
 		for (auto& instance : instances)
 		{
-			entity = librg_entity_fetch(&instance->ctx, instance->player->GetEntityID());
+			entity = instance->FetchEntity(instance->player->GetEntityID());
 			entity->position.x = x;
 			entity->position.y = y;
 			entity->position.z = z;
@@ -470,56 +464,52 @@ void f4mp::F4MP::SetEntVarNum(StaticFunctionTag* base, UInt32 entityID, BSFixedS
 {
 	F4MP& self = GetInstance();
 
-	librg_entity* entity = librg_entity_fetch(&self.ctx, entityID);
-	if (!entity)
+	Player* player = Entity::GetAs<Player>(self.FetchEntity(entityID));
+	if (!player)
 	{
-		_ERROR("no entity with ID '%d'!", entityID);
 		return;
 	}
 
-	Player::Get(entity)->SetNumber(name.c_str(), value);
+	player->SetNumber(name.c_str(), value);
 }
 
 void f4mp::F4MP::SetEntVarAnim(StaticFunctionTag* base, UInt32 entityID, BSFixedString animState)
 {
 	F4MP& self = GetInstance();
 
-	librg_entity* entity = librg_entity_fetch(&self.ctx, entityID);
-	if (!entity)
+	Player* player = Entity::GetAs<Player>(self.FetchEntity(entityID));
+	if (!player)
 	{
-		_ERROR("no entity with ID '%d'!", entityID);
 		return;
 	}
 
-	Player::Get(entity)->SetAnimState(animState.c_str());
+	player->SetAnimState(animState.c_str());
 }
 
 Float32 f4mp::F4MP::GetEntVarNum(StaticFunctionTag* base, UInt32 entityID, BSFixedString name)
 {
 	F4MP& self = GetInstance();
 
-	librg_entity* entity = librg_entity_fetch(&self.ctx, entityID);
-	if (!entity)
+	Player* player = Entity::GetAs<Player>(self.FetchEntity(entityID));
+	if (!player)
 	{
-		_ERROR("no entity with ID '%d'!", entityID);
 		return 0.f;
 	}
 
-	return Player::Get(entity)->GetNumber(name.c_str());
+	return player->GetNumber(name.c_str());
 }
 
 BSFixedString f4mp::F4MP::GetEntVarAnim(StaticFunctionTag* base, UInt32 entityID)
 {
 	F4MP& self = GetInstance();
 
-	librg_entity* entity = librg_entity_fetch(&self.ctx, entityID);
-	if (!entity)
+	Player* player = Entity::GetAs<Player>(self.FetchEntity(entityID));
+	if (!player)
 	{
-		_ERROR("no entity with ID '%d'!", entityID);
 		return Animation::GetStateName(0).c_str();
 	}
 
-	return Player::Get(entity)->GetAnimState().c_str();
+	return player->GetAnimState().c_str();
 }
 
 Float32 f4mp::F4MP::Atan2(StaticFunctionTag* base, Float32 y, Float32 x)
@@ -528,7 +518,7 @@ Float32 f4mp::F4MP::Atan2(StaticFunctionTag* base, Float32 y, Float32 x)
 	return fmod(atan2(y, x) + 2.f * pi, 2.f * pi);
 }
 
-BSFixedString f4mp::F4MP::_GetWalkDir(StaticFunctionTag* base, Float32 dX, Float32 dY, Float32 angleZ)
+BSFixedString f4mp::F4MP::GetWalkDir(StaticFunctionTag* base, Float32 dX, Float32 dY, Float32 angleZ)
 {
 	switch (Player::GetWalkDir(zpl_vec2{ dX, dY }, angleZ))
 	{
@@ -564,13 +554,44 @@ void f4mp::F4MP::CopyWornItems(StaticFunctionTag* base, Actor* src, Actor* dest)
 	Player::SetWornItems(dest, wornItems);
 }
 
+/*static void CopyHeardPart(BGSHeadPart* src, BGSHeadPart*& dest)
+{
+	dest = (BGSHeadPart*)Heap_Allocate(sizeof(BGSHeadPart));
+	memset(dest, 0, sizeof(BGSHeadPart));
+
+	*dest = *src;
+
+	return;
+
+	dest->fullName = src->fullName;
+	dest->partFlags = src->partFlags;
+	dest->type = src->type;
+
+	for (UInt32 i = 0; i < src->extraParts.count; i++)
+	{
+		BGSHeadPart* extra;
+		CopyHeardPart(src->extraParts[i], extra);
+		dest->extraParts.Push(extra);
+	}
+
+	return;
+
+	src->textureSet = dest->textureSet;
+
+	//dest->model = src->model;
+	//std::copy(&src->morphs[0], &src->morphs[3], &dest->morphs[0]);
+
+	dest->unk158 = src->unk158;
+	dest->partName = src->partName;
+}*/
+
 void f4mp::F4MP::PlayerHit(StaticFunctionTag* base, UInt32 hitter, UInt32 hittee, Float32 damage)
 {
 	F4MP& self = GetInstance();
 
 	HitData data{ hitter, hittee, damage };
 
-	librg_message_send_all(&self.ctx, Message::Hit, &data, sizeof(HitData));
+	librg_message_send_all(&self.ctx, MessageType::Hit, &data, sizeof(HitData));
 }
 
 void f4mp::F4MP::PlayerFireWeapon(StaticFunctionTag* base)
@@ -578,5 +599,12 @@ void f4mp::F4MP::PlayerFireWeapon(StaticFunctionTag* base)
 	F4MP& self = GetInstance();
 
 	UInt32 playerEntityID = self.player->GetEntityID();
-	librg_message_send_all(&self.ctx, Message::FireWeapon, &playerEntityID, sizeof(UInt32));
+	librg_message_send_all(&self.ctx, MessageType::FireWeapon, &playerEntityID, sizeof(UInt32));
+}
+
+void f4mp::F4MP::AddEntity(StaticFunctionTag* base, TESObjectREFR* ref)
+{
+	F4MP& self = GetInstance();
+
+	librg_message_send_all(&self.ctx, MessageType::AddEntity, &ref->formID, sizeof(UInt32));
 }

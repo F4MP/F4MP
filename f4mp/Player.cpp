@@ -9,7 +9,7 @@ void f4mp::Player::OnConnect(Actor* player, TESNPC* playerActorBase)
 
 void f4mp::Player::OnEntityCreate(librg_event* event)
 {
-	event->entity->user_data = this;
+	Entity::OnEntityCreate(event);
 
 	Utils::Read(event->data, appearance.female);
 	Utils::Read(event->data, appearance.weights);
@@ -38,10 +38,28 @@ void f4mp::Player::OnEntityCreate(librg_event* event)
 			break;
 		}
 	}
+
+	struct Tmp
+	{
+		UInt32 id;
+		const WornItemsData& wornItems;
+	} tmp{ event->entity->id, GetWornItems() };
+
+	F4MP& self = F4MP::GetInstance();
+
+	self.papyrus->GetExternalEventRegistrations("OnEntityCreate", &tmp, [](UInt64 handle, const char* scriptName, const char* callbackName, void* dataPtr)
+		{
+			Tmp* tmp = static_cast<Tmp*>(dataPtr);
+			VMArray<TESForm*> wornItems(F4MP::DecodeWornItems(tmp->wornItems));
+
+			SendPapyrusEvent2<UInt32, VMArray<TESForm*>>(handle, scriptName, callbackName, tmp->id, wornItems);
+		});
 }
 
 void f4mp::Player::OnEntityUpdate(librg_event* event)
 {
+	Entity::OnEntityUpdate(event);
+
 	numbers["angleX"] = librg_data_rf32(event->data);
 	numbers["angleY"] = librg_data_rf32(event->data);
 	numbers["angleZ"] = librg_data_rf32(event->data);
@@ -53,12 +71,13 @@ void f4mp::Player::OnEntityUpdate(librg_event* event)
 
 void f4mp::Player::OnEntityRemove(librg_event* event)
 {
-	delete this;
-	event->entity->user_data = nullptr;
+	Entity::OnEntityRemove(event);
 }
 
 void f4mp::Player::OnClientUpdate(librg_event* event)
 {
+	Entity::OnClientUpdate(event);
+
 	const std::string& animState = GetAnimState();
 
 	zpl_vec2 displacement = event->entity->position.xy - prevPosition.xy;
@@ -157,6 +176,8 @@ const f4mp::client::WornItemsData& f4mp::Player::GetWornItems() const
 
 void f4mp::Player::OnConnectRequest(librg_event* event)
 {
+	Entity::OnConnectRequest(event);
+
 	Utils::Write(event->data, appearance.female);
 	Utils::Write(event->data, appearance.weights);
 	Utils::Write(event->data, appearance.hairColor);
@@ -173,6 +194,8 @@ void f4mp::Player::OnConnectRequest(librg_event* event)
 
 void f4mp::Player::OnConnectAccept(librg_event* event)
 {
+	Entity::OnConnectAccept(event);
+
 	entityID = event->entity->id;
 
 	event->entity->user_data = this;
@@ -180,17 +203,7 @@ void f4mp::Player::OnConnectAccept(librg_event* event)
 
 void f4mp::Player::OnDisonnect(librg_event* event)
 {
-	event->entity->user_data = nullptr;
-}
-
-f4mp::Player* f4mp::Player::Get(librg_event* event)
-{
-	return Get(event->entity);
-}
-
-f4mp::Player* f4mp::Player::Get(librg_entity* entity)
-{
-	return (Player*)entity->user_data;
+	Entity::OnDisonnect(event);
 }
 
 int f4mp::Player::GetWalkDir(const zpl_vec2& displacement, float lookAngle)

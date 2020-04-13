@@ -23,6 +23,8 @@ namespace f4mp
 
 		bool Init(const F4SEInterface* f4se);
 
+		librg_entity* FetchEntity(UInt32 id, const std::string& errorMsg = "no entity with ID '%d'!");
+
 		static std::vector<TESForm*> DecodeWornItems(const WornItemsData& wornItems);
 
 	private:
@@ -79,44 +81,14 @@ namespace f4mp
 		static BSFixedString GetEntVarAnim(StaticFunctionTag* base, UInt32 entityID);
 		
 		static Float32 Atan2(StaticFunctionTag* base, Float32 y, Float32 x);
-		static BSFixedString _GetWalkDir(StaticFunctionTag* base, Float32 dX, Float32 dY, Float32 angleZ);
+		static BSFixedString GetWalkDir(StaticFunctionTag* base, Float32 dX, Float32 dY, Float32 angleZ);
 		static bool AnimLoops(StaticFunctionTag* base, BSFixedString animState);
-		
-		//static void CopyHeardPart(BGSHeadPart* src, BGSHeadPart*& dest)
-		//{
-		//	dest = (BGSHeadPart*)Heap_Allocate(sizeof(BGSHeadPart));
-		//	memset(dest, 0, sizeof(BGSHeadPart));
 
-		//	*dest = *src;
-
-		//	return;
-
-		//	dest->fullName = src->fullName;
-		//	dest->partFlags = src->partFlags;
-		//	dest->type = src->type;
-
-		//	for (UInt32 i = 0; i < src->extraParts.count; i++)
-		//	{
-		//		BGSHeadPart* extra;
-		//		CopyHeardPart(src->extraParts[i], extra);
-		//		dest->extraParts.Push(extra);
-		//	}
-
-		//	return;
-
-		//	src->textureSet = dest->textureSet;
-
-		//	//dest->model = src->model;
-		//	//std::copy(&src->morphs[0], &src->morphs[3], &dest->morphs[0]);
-
-		//	dest->unk158 = src->unk158;
-		//	dest->partName = src->partName;
-		//}
-		
 		static void CopyAppearance(StaticFunctionTag* base, TESNPC* src, TESNPC* dest);
 		static void CopyWornItems(StaticFunctionTag* base, Actor* src, Actor* dest);
-		
+
 		static void PlayerHit(StaticFunctionTag* base, UInt32 hitter, UInt32 hittee, Float32 damage);
 		static void PlayerFireWeapon(StaticFunctionTag* base);
+		static void AddEntity(StaticFunctionTag* base, TESObjectREFR* ref);
 	};
 }

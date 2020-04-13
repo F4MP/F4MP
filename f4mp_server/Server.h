@@ -2,22 +2,12 @@
 
 #include <librg.h>
 
-#include "common.h"
+#include "server_common.h"
+#include "Entity.h"
+#include "Player.h"
 
 namespace f4mp
 {
-    struct Player
-    {
-        float angles[3];
-
-        float health;
-
-        int animState;
-
-        AppearanceData appearance;
-        WornItemsData wornItems;
-    };
-
     class Server
     {
     private:
@@ -26,21 +16,7 @@ namespace f4mp
             Player* player = new Player{};
             event->user_data = player;
 
-            AppearanceData& playerAppearance = player->appearance;
-            WornItemsData& playerWornItems = player->wornItems;
-
-            Utils::Read(event->data, playerAppearance.female);
-            Utils::Read(event->data, playerAppearance.weights);
-            Utils::Read(event->data, playerAppearance.hairColor);
-            Utils::Read(event->data, playerAppearance.headParts);
-            Utils::Read(event->data, playerAppearance.morphSetValue);
-            Utils::Read(event->data, playerAppearance.morphRegionData1);
-            Utils::Read(event->data, playerAppearance.morphRegionData2);
-            Utils::Read(event->data, playerAppearance.morphSetData1);
-            Utils::Read(event->data, playerAppearance.morphSetData2);
-
-            Utils::Read(event->data, playerWornItems.data1);
-            Utils::Read(event->data, playerWornItems.data2);
+            player->OnConnectRequest(event);
 
             librg_log("connection requested");
         }
@@ -70,90 +46,44 @@ namespace f4mp
             librg_log("%p\n", event->user_data);
 
             event->entity->user_data = event->user_data;
+
+            Entity::Get(event)->OnConnectAccept(event);
         }
 
         static void on_connect_refused(librg_event* event)
         {
             librg_log("on_connect_refused\n");
 
-            delete (Player*)event->user_data;
+            ((Player*)event->user_data)->OnConnectRefuse(event);
         }
 
         static void on_connect_disconnect(librg_event* event)
         {
             librg_log("entity %d peer disconnected: %x\n", event->entity->id, event->peer);
 
-            delete (Player*)event->entity->user_data;
+            Entity::Get(event)->OnDisonnect(event);
         }
 
         static void on_entity_create(librg_event* event)
         {
-            Player* player = (Player*)event->entity->user_data;
-            if (!player)
-            {
-                return;
-            }
-
-            AppearanceData& playerAppearance = player->appearance;
-            WornItemsData& playerWornItems = player->wornItems;
-
-            Utils::Write(event->data, playerAppearance.female);
-            Utils::Write(event->data, playerAppearance.weights);
-            Utils::Write(event->data, playerAppearance.hairColor);
-            Utils::Write(event->data, playerAppearance.headParts);
-            Utils::Write(event->data, playerAppearance.morphSetValue);
-            Utils::Write(event->data, playerAppearance.morphRegionData1);
-            Utils::Write(event->data, playerAppearance.morphRegionData2);
-            Utils::Write(event->data, playerAppearance.morphSetData1);
-            Utils::Write(event->data, playerAppearance.morphSetData2);
-
-            Utils::Write(event->data, playerWornItems.data1);
-            Utils::Write(event->data, playerWornItems.data2);
+            Entity::Get(event)->OnEntityCreate(event);
         }
 
         static void on_entity_update(librg_event* event)
         {
-            Player* player = (Player*)event->entity->user_data;
-            if (!player)
-            {
-                return;
-            }
-
-            librg_data_wf32(event->data, player->angles[0]);
-            librg_data_wf32(event->data, player->angles[1]);
-            librg_data_wf32(event->data, player->angles[2]);
-
-            librg_data_wf32(event->data, player->health);
-
-            librg_data_wi32(event->data, player->animState);
+            Entity::Get(event)->OnEntityUpdate(event);
         }
 
         static void on_entity_remove(librg_event* event)
         {
             librg_log("remove ent %d for client %x\n", event->entity->id, event->peer);
+
+            Entity::Get(event)->OnEntityRemove(event);
         }
 
         static void on_update(librg_event* e)
         {
-            Player* player = (Player*)e->entity->user_data;
-            if (!player)
-            {
-                return;
-            }
-
-            librg_data_read_safe(f32, ax, e->data);
-            librg_data_read_safe(f32, ay, e->data);
-            librg_data_read_safe(f32, az, e->data);
-            librg_data_read_safe(f32, health, e->data);
-            librg_data_read_safe(i32, animState, e->data);
-
-            player->angles[0] = ax;
-            player->angles[1] = ay;
-            player->angles[2] = az;
-
-            player->health = health;
-
-            player->animState = animState;
+            Entity::Get(e)->OnClientUpdate(e);
         }
 
         static void OnHit(librg_message* msg)
@@ -161,7 +91,7 @@ namespace f4mp
             HitData data;
             librg_data_rptr(msg->data, &data, sizeof(HitData));
 
-            librg_message_send_to(msg->ctx, Message::Hit, librg_entity_control_get(msg->ctx, data.hittee), &data, sizeof(HitData));
+            librg_message_send_to(msg->ctx, MessageType::Hit, librg_entity_control_get(msg->ctx, data.hittee), &data, sizeof(HitData));
         }
 
         static void OnFireWeapon(librg_message* msg)
@@ -169,7 +99,18 @@ namespace f4mp
             u32 entity;
             librg_data_rptr(msg->data, &entity, sizeof(u32));
 
-            librg_message_send_except(msg->ctx, Message::FireWeapon, librg_entity_control_get(msg->ctx, entity), &entity, sizeof(u32));
+            librg_message_send_except(msg->ctx, MessageType::FireWeapon, librg_entity_control_get(msg->ctx, entity), &entity, sizeof(u32));
+        }
+
+        static void OnAddEntity(librg_message* msg)
+        {
+            u32 formID;
+            librg_data_rptr(msg->data, &formID, sizeof(u32));
+
+            // TODO: change it so only the host can add entities?
+
+            librg_entity* entity = librg_entity_create(msg->ctx, EntityType::NPC);
+            librg_entity_control_set(msg->ctx, entity->id, msg->peer);
         }
 
     public:
@@ -199,8 +140,9 @@ namespace f4mp
             librg_event_add(&ctx, LIBRG_ENTITY_UPDATE, on_entity_update);
             librg_event_add(&ctx, LIBRG_ENTITY_REMOVE, on_entity_remove);
 
-            librg_network_add(&ctx, Message::Hit, OnHit);
-            librg_network_add(&ctx, Message::FireWeapon, OnFireWeapon);
+            librg_network_add(&ctx, MessageType::Hit, OnHit);
+            librg_network_add(&ctx, MessageType::FireWeapon, OnFireWeapon);
+            librg_network_add(&ctx, MessageType::AddEntity, OnAddEntity);
 
             librg_network_start(&ctx, librg_address{ 7779, const_cast<char*>(address.c_str()) });
 
