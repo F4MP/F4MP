@@ -7,7 +7,7 @@
 extern "C" {
 
 	bool F4SEPlugin_Query(const F4SEInterface* f4se, PluginInfo* info) {	// Called by SKSE to learn about this plugin and check that it's safe to load it
-		gLog.OpenRelative(CSIDL_MYDOCUMENTS, "\\My Games\\Fallout4\\F4SE\\F4MP.log");
+		gLog.OpenRelative(CSIDL_MYDOCUMENTS, "\\My Games\\Fallout4\\F4MP\\F4MP.log");
 		gLog.SetPrintLevel(IDebugLog::kLevel_Error);
 		gLog.SetLogLevel(IDebugLog::kLevel_DebugMessage);
 

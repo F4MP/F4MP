@@ -112,4 +112,9 @@ namespace f4mp
 
 		std::function<void()> callback;
 	};
+
+	struct Config
+	{
+		std::string hostAddress;
+	};
 }

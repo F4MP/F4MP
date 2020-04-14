@@ -6,11 +6,17 @@
 #include "Entity.h"
 #include "Player.h"
 
+#include <unordered_map>
+
 namespace f4mp
 {
     class Server
     {
     private:
+        static Server* instance;
+
+        std::unordered_map<u32, u32> entityIDs;
+
         static void on_connect_request(librg_event* event)
         {
             Player* player = new Player{};
@@ -141,13 +147,21 @@ namespace f4mp
             u32 entity;
             librg_data_rptr(msg->data, &entity, sizeof(u32));
 
-            librg_message_send_except(msg->ctx, MessageType::FireWeapon, librg_entity_control_get(msg->ctx, entity), &entity, sizeof(u32));
+            librg_message_send_except(msg->ctx, MessageType::FireWeapon, msg->peer, &entity, sizeof(u32));
         }
 
-        static void OnAddEntity(librg_message* msg)
+        static void OnSpawnEntity(librg_message* msg)
         {
-            u32 formID;
-            librg_data_rptr(msg->data, &formID, sizeof(u32));
+            SpawnData data;
+            librg_data_rptr(msg->data, &data, sizeof(SpawnData));
+
+            auto entityID = instance->entityIDs.find(data.formID);
+            if (entityID != instance->entityIDs.end())
+            {
+                return;
+            }
+
+            librg_log("entity spawned: %x (%f, %f, %f) (%f, %f, %f)\n", data.formID, data.position.x, data.position.y, data.position.z, data.angles.x, data.angles.y, data.angles.z);
 
             // TODO: change it so only the host can add entities?
 
@@ -155,11 +169,18 @@ namespace f4mp
             librg_entity_control_set(msg->ctx, entity->id, msg->peer);
             
             Entity::Create(entity);
+
+            data.entityID = entity->id;
+            instance->entityIDs[data.formID] = data.entityID;
+            
+            librg_message_send_all(msg->ctx, MessageType::SpawnEntity, &data, sizeof(SpawnData));
         }
 
     public:
         Server(const std::string& address)
         {
+            instance = this;
+
             librg_option_set(LIBRG_MAX_ENTITIES_PER_BRANCH, 4);
 
             librg_ctx ctx = { 0 };
@@ -186,7 +207,7 @@ namespace f4mp
 
             librg_network_add(&ctx, MessageType::Hit, OnHit);
             librg_network_add(&ctx, MessageType::FireWeapon, OnFireWeapon);
-            librg_network_add(&ctx, MessageType::AddEntity, OnAddEntity);
+            librg_network_add(&ctx, MessageType::SpawnEntity, OnSpawnEntity);
 
             librg_network_start(&ctx, librg_address{ 7779, const_cast<char*>(address.c_str()) });
 
@@ -199,6 +220,15 @@ namespace f4mp
 
             librg_network_stop(&ctx);
             librg_free(&ctx);
+        }
+
+        virtual ~Server()
+        {
+            // just in case..
+            if (instance == this)
+            {
+                instance = nullptr;
+            }
         }
     };
 }

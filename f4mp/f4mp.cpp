@@ -12,6 +12,9 @@
 
 #include "f4mp.h"
 
+#include <fstream>
+#include <shlobj.h>				// CSIDL_MYCODUMENTS
+
 std::vector<std::unique_ptr<f4mp::F4MP>> f4mp::F4MP::instances;
 size_t f4mp::F4MP::activeInstance = 0;
 
@@ -52,8 +55,29 @@ f4mp::F4MP::F4MP() : ctx{}, port(0), handle(kPluginHandle_Invalid), messaging(nu
 
 	librg_network_add(&ctx, MessageType::Hit, OnHit);
 	librg_network_add(&ctx, MessageType::FireWeapon, OnFireWeapon);
+	librg_network_add(&ctx, MessageType::SpawnEntity, OnSpawnEntity);
 
 	player = std::make_unique<Player>();
+
+	char	path[MAX_PATH];
+	HRESULT err = SHGetFolderPath(NULL, CSIDL_MYDOCUMENTS | CSIDL_FLAG_CREATE, NULL, SHGFP_TYPE_CURRENT, path);
+	if (!SUCCEEDED(err))
+	{
+		_FATALERROR("SHGetFolderPath %08X failed (result = %08X lasterr = %08X)", CSIDL_MYDOCUMENTS, err, GetLastError());
+	}
+	ASSERT_CODE(SUCCEEDED(err), err);
+	strcat_s(path, sizeof(path), "\\My Games\\Fallout4\\F4MP\\config.txt");
+
+	std::ifstream configFile(path);
+	if (!configFile)
+	{
+		std::ofstream newConfigFile(path);
+		newConfigFile << "localhost" << std::endl;
+
+		configFile = std::ifstream(path);
+	}
+
+	configFile >> config.hostAddress;
 }
 
 f4mp::F4MP::~F4MP()
@@ -96,12 +120,14 @@ bool f4mp::F4MP::Init(const F4SEInterface* f4se)
 			vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, UInt32>("GetClientInstanceID", "F4MP", GetClientInstanceID, vm));
 			vm->RegisterFunction(new NativeFunction1<StaticFunctionTag, void, UInt32>("SetClient", "F4MP", SetClient, vm));
 
+			vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, bool>("IsConnected", "F4MP", IsConnected, vm));
 			vm->RegisterFunction(new NativeFunction4<StaticFunctionTag, bool, Actor*, TESNPC*, BSFixedString, SInt32>("Connect", "F4MP", Connect, vm));
 			vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, bool>("Disconnect", "F4MP", Disconnect, vm));
 			vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("Tick", "F4MP", Tick, vm));
 			//vm->SetFunctionFlags("F4MP", "Tick", IFunction::kFunctionFlag_NoWait);
 
 			vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, UInt32>("GetPlayerEntityID", "F4MP", GetPlayerEntityID, vm));
+			vm->RegisterFunction(new NativeFunction1<StaticFunctionTag, UInt32, TESObjectREFR*>("GetEntityID", "F4MP", GetEntityID, vm));
 
 			vm->RegisterFunction(new NativeFunction1<StaticFunctionTag, bool, UInt32>("IsEntityValid", "F4MP", IsEntityValid, vm));
 			vm->RegisterFunction(new NativeFunction1<StaticFunctionTag, VMArray<Float32>, UInt32>("GetEntityPosition", "F4MP", GetEntityPosition, vm));
@@ -152,6 +178,7 @@ bool f4mp::F4MP::Init(const F4SEInterface* f4se)
 
 			vm->RegisterFunction(new NativeFunction3<StaticFunctionTag, void, UInt32, UInt32, Float32>("PlayerHit", "F4MP", PlayerHit, vm));
 			vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("PlayerFireWeapon", "F4MP", PlayerFireWeapon, vm));
+			vm->RegisterFunction(new NativeFunction7<StaticFunctionTag, void, TESObjectREFR*, Float32, Float32, Float32, Float32, Float32, Float32>("SpawnEntity", "F4MP", SpawnEntity, vm));
 
 			return true;
 		}))
@@ -178,7 +205,7 @@ librg_entity* f4mp::F4MP::FetchEntity(UInt32 id, const std::string& errorMsg)
 std::vector<TESForm*> f4mp::F4MP::DecodeWornItems(const WornItemsData& wornItems)
 {
 	std::vector<TESForm*> items;
-
+	
 	//for (auto& item : wornItems.data)
 	for (size_t k = 0; k < wornItems.data1.size(); k++)
 	{
@@ -355,6 +382,26 @@ void f4mp::F4MP::OnFireWeapon(librg_message* msg)
 		});
 }
 
+void f4mp::F4MP::OnSpawnEntity(librg_message* msg)
+{
+	F4MP& self = GetInstance();
+
+	SpawnData data;
+	librg_data_rptr(msg->data, &data, sizeof(SpawnData));
+
+	self.entityIDs[data.formID] = data.entityID;
+
+	_MESSAGE("OnSpawnEntity: %u(%x)", data.entityID, data.formID);
+
+	self.papyrus->GetExternalEventRegistrations("OnSpawnEntity", &data, [](UInt64 handle, const char* scriptName, const char* callbackName, void* dataPtr)
+		{
+			F4MP& self = GetInstance();
+
+			SpawnData* data = static_cast<SpawnData*>(dataPtr);
+			SendPapyrusEvent1<UInt32>(handle, scriptName, callbackName, (UInt32&)data->formID);
+		});
+}
+
 UInt32 f4mp::F4MP::GetClientInstanceID(StaticFunctionTag* base)
 {
 	return activeInstance;
@@ -365,6 +412,11 @@ void f4mp::F4MP::SetClient(StaticFunctionTag* base, UInt32 instance)
 	activeInstance = instance;
 }
 
+bool f4mp::F4MP::IsConnected(StaticFunctionTag* base)
+{
+	return !!librg_is_connected(&GetInstance().ctx);
+}
+
 bool f4mp::F4MP::Connect(StaticFunctionTag* base, Actor* player, TESNPC* playerActorBase, BSFixedString address, SInt32 port)
 {
 	F4MP& self = GetInstance();
@@ -373,15 +425,15 @@ bool f4mp::F4MP::Connect(StaticFunctionTag* base, Actor* player, TESNPC* playerA
 	self.player = std::make_unique<Player>();
 	self.player->OnConnect(player, playerActorBase);
 
-	self.address = address;
+	self.address = strlen(address.c_str()) > 0 ? address.c_str() : self.config.hostAddress;
 	self.port = port;
 
-	if (librg_network_start(&self.ctx, { port, const_cast<char*>(address.c_str()) }))
+	if (librg_network_start(&self.ctx, { self.port, const_cast<char*>(self.address.c_str()) }))
 	{
 		_ERROR("failed to connect to the server!");
 		return false;
 	}
-
+	
 	return true;
 }
 
@@ -409,6 +461,19 @@ UInt32 f4mp::F4MP::GetPlayerEntityID(StaticFunctionTag* base)
 {
 	F4MP& self = GetInstance();
 	return self.player->GetEntityID();
+}
+
+UInt32 f4mp::F4MP::GetEntityID(StaticFunctionTag* base, TESObjectREFR* ref)
+{
+	F4MP& self = GetInstance();
+
+	auto entityID = self.entityIDs.find(ref->formID);
+	if (entityID == self.entityIDs.end())
+	{
+		return (UInt32)-1;
+	}
+	
+	return entityID->second;
 }
 
 bool f4mp::F4MP::IsEntityValid(StaticFunctionTag* base, UInt32 entityID)
@@ -448,11 +513,18 @@ void f4mp::F4MP::SetEntityPosition(StaticFunctionTag* base, UInt32 entityID, flo
 	{
 		for (auto& instance : instances)
 		{
+			if (!librg_is_connected(&instance->ctx))
+			{
+				continue;
+			}
+
 			entity = instance->FetchEntity(instance->player->GetEntityID());
 			entity->position.x = x;
 			entity->position.y = y;
 			entity->position.z = z;
 		}
+
+		return;
 	}
 
 	entity->position.x = x;
@@ -602,9 +674,15 @@ void f4mp::F4MP::PlayerFireWeapon(StaticFunctionTag* base)
 	librg_message_send_all(&self.ctx, MessageType::FireWeapon, &playerEntityID, sizeof(UInt32));
 }
 
-void f4mp::F4MP::AddEntity(StaticFunctionTag* base, TESObjectREFR* ref)
+void f4mp::F4MP::SpawnEntity(StaticFunctionTag* base, TESObjectREFR* ref, Float32 x, Float32 y, Float32 z, Float32 angleX, Float32 angleY, Float32 angleZ)
 {
 	F4MP& self = GetInstance();
+	if (!librg_is_connected(&self.ctx))
+	{
+		return;
+	}
+
+	SpawnData data{ ref->formID, {x, y, z}, {angleX, angleY, angleZ} };
 	
-	librg_message_send_all(&self.ctx, MessageType::AddEntity, &ref->formID, sizeof(UInt32));
+	librg_message_send_all(&self.ctx, MessageType::SpawnEntity, &data, sizeof(SpawnData));
 }

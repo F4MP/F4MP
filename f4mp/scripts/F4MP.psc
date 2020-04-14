@@ -3,11 +3,13 @@ Scriptname F4MP Native Hidden
 int Function GetClientInstanceID() global native
 Function SetClient(int instanceID) global native
 
+bool Function IsConnected() global native
 bool Function Connect(Actor player, ActorBase playerActorBase, string address, int port) global native
 bool Function Disconnect() global native
 Function Tick() global native
 
 int Function GetPlayerEntityID() global native
+int Function GetEntityID(ObjectReference ref) global native
 
 bool Function IsEntityValid(int entityID) global native
 
@@ -29,3 +31,4 @@ Function CopyWornItems(Actor src, Actor dest) global native
 
 Function PlayerHit(int hitter, int hittee, float damage) global native
 Function PlayerFireWeapon() global native
+Function SpawnEntity(ObjectReference ref, float x, float y, float z, float angleX, float angleY, float angleZ) global native

@@ -5,6 +5,7 @@
 
 #include <memory>
 #include <vector>
+#include <unordered_map>
 #include <functional>
 #include <algorithm>
 
@@ -31,6 +32,8 @@ namespace f4mp
 		static std::vector<std::unique_ptr<F4MP>> instances;
 		static size_t activeInstance;
 
+		Config config;
+
 		std::string address;
 		SInt32 port;
 
@@ -44,13 +47,15 @@ namespace f4mp
 
 		std::unique_ptr<Player> player;
 
+		std::unordered_map<UInt32, UInt32> entityIDs;
+
 		static void OnConnectRequest(librg_event* event);
 		static void OnConnectAccept(librg_event* event);
 		static void OnConnectRefuse(librg_event* event);
 		static void OnDisonnect(librg_event* event);
 
 		//TODO: abstract event handlers as they're basically the same
-
+		
 		static void OnEntityCreate(librg_event* event);
 		static void OnEntityUpdate(librg_event* event);
 		static void OnEntityRemove(librg_event* event);
@@ -59,20 +64,23 @@ namespace f4mp
 
 		static void OnHit(librg_message* msg);
 		static void OnFireWeapon(librg_message* msg);
+		static void OnSpawnEntity(librg_message* msg);
 		
 		static UInt32 GetClientInstanceID(StaticFunctionTag* base);
 		static void SetClient(StaticFunctionTag* base, UInt32 instance);
 
+		static bool IsConnected(StaticFunctionTag* base);
 		static bool Connect(StaticFunctionTag* base, Actor* player, TESNPC* playerActorBase, BSFixedString address, SInt32 port);
 		static bool Disconnect(StaticFunctionTag* base);
 		static void Tick(StaticFunctionTag* base);
-
+		
 		static UInt32 GetPlayerEntityID(StaticFunctionTag* base);
+		static UInt32 GetEntityID(StaticFunctionTag* base, TESObjectREFR* ref);
 		static bool IsEntityValid(StaticFunctionTag* base, UInt32 entityID);
 
 		static VMArray<Float32> GetEntityPosition(StaticFunctionTag* base, UInt32 entityID);
 		static void SetEntityPosition(StaticFunctionTag* base, UInt32 entityID, float x, float y, float z);
-
+		
 		//TODO: abstract ...EntVar...
 
 		static void SetEntVarNum(StaticFunctionTag* base, UInt32 entityID, BSFixedString name, Float32 value);
@@ -89,6 +97,6 @@ namespace f4mp
 
 		static void PlayerHit(StaticFunctionTag* base, UInt32 hitter, UInt32 hittee, Float32 damage);
 		static void PlayerFireWeapon(StaticFunctionTag* base);
-		static void AddEntity(StaticFunctionTag* base, TESObjectREFR* ref);
+		static void SpawnEntity(StaticFunctionTag* base, TESObjectREFR* ref, Float32 x, Float32 y, Float32 z, Float32 angleX, Float32 angleY, Float32 angleZ);
 	};
 }

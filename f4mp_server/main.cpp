@@ -5,6 +5,8 @@
 #include <iostream>
 #include <fstream>
 
+f4mp::Server* f4mp::Server::instance = nullptr;
+
 int main()
 {
 	const std::string configFilePath = "server_config.txt";

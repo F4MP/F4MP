@@ -14,7 +14,7 @@ namespace f4mp
 		{
 			Hit = LIBRG_EVENT_LAST + 1u,
 			FireWeapon,
-			AddEntity
+			SpawnEntity
 		};
 	};
 
@@ -31,6 +31,15 @@ namespace f4mp
 	{
 		u32 hitter, hittee;
 		f32 damage;
+	};
+
+	struct SpawnData
+	{
+		u32 formID;
+		zpl_vec3 position;
+		zpl_vec3 angles;
+
+		u32 entityID;
 	};
 
 	struct AppearanceData
