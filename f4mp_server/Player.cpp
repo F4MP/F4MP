@@ -43,6 +43,8 @@ void f4mp::Player::OnEntityCreate(librg_event* event)
 {
     Entity::OnEntityCreate(event);
 
+
+
     AppearanceData& playerAppearance = appearance;
     WornItemsData& playerWornItems = wornItems;
 

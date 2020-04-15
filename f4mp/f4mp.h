@@ -5,6 +5,7 @@
 
 #include <memory>
 #include <vector>
+#include <unordered_set>
 #include <unordered_map>
 #include <functional>
 #include <algorithm>
@@ -49,6 +50,8 @@ namespace f4mp
 
 		std::unordered_map<UInt32, UInt32> entityIDs;
 
+		std::unordered_set<UInt32> myEntities;
+
 		static void OnConnectRequest(librg_event* event);
 		static void OnConnectAccept(librg_event* event);
 		static void OnConnectRefuse(librg_event* event);
@@ -72,11 +75,12 @@ namespace f4mp
 		static bool IsConnected(StaticFunctionTag* base);
 		static bool Connect(StaticFunctionTag* base, Actor* player, TESNPC* playerActorBase, BSFixedString address, SInt32 port);
 		static bool Disconnect(StaticFunctionTag* base);
-		static void Tick(StaticFunctionTag* base);
+		static void Tick(StaticFunctionTag* base, Actor* player);
 		
 		static UInt32 GetPlayerEntityID(StaticFunctionTag* base);
 		static UInt32 GetEntityID(StaticFunctionTag* base, TESObjectREFR* ref);
 		static bool IsEntityValid(StaticFunctionTag* base, UInt32 entityID);
+		static bool IsEntityMine(StaticFunctionTag* base, UInt32 entityID);
 
 		static VMArray<Float32> GetEntityPosition(StaticFunctionTag* base, UInt32 entityID);
 		static void SetEntityPosition(StaticFunctionTag* base, UInt32 entityID, float x, float y, float z);

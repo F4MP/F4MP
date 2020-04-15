@@ -1,21 +1,17 @@
 Scriptname F4MPQuest extends Quest
 
 int tickTimerID = 10
-int updateTimerID = 20
-int queryTimerID = 30
-
-Actor Property playerRef Auto
+int queryTimerID = 20
 
 ActorBase Property f4mpPlayerBase Auto
 
 ActorValue Property healthAV Auto
 
-Spell Property entitySyncSpell Auto
-
 int[] playerIDs
 F4MPPlayer[] players
 
-Actor[] npcs
+Actor[] myNPCs
+Actor[] othersNPCs
 
 Event OnInit()
 	RegisterForKey(112)
@@ -98,13 +94,8 @@ Function OnSpawnEntity(int formID)
 	EndIf
 
 	Actor actorRef = ref as Actor
-	If actorRef != None
-		actorRef.AddSpell(entitySyncSpell)
-
-		; just in case
-		If npcs.Find(actorRef) < 0
-			npcs.Add(actorRef)
-		EndIf
+	If actorRef != None && myNPCs.Find(actorRef) < 0
+		othersNPCs.Add(actorRef)
 	EndIf
 EndFunction
 
@@ -123,7 +114,6 @@ bool Function Connect(string address, int port)
 	ActorBase clientActorBase = client.GetActorBase()
 	
 	StartTimer(0, tickTimerID)
-	StartTimer(0, updateTimerID)
 	return F4MP.Connect(client, clientActorBase, address, port)
 EndFunction
 
@@ -134,7 +124,8 @@ Event OnKeyDown(int keyCode)
 		playerIDs = new int[0]
 		players = new F4MPPlayer[0]		
 
-		npcs = new Actor[0]
+		othersNPCs = new Actor[0]
+		myNPCs = new Actor[0]
 		StartTimer(0, queryTimerID)
 
 		;Actor player = Game.GetPlayer()
@@ -198,15 +189,14 @@ EndEvent
 
 Event OnTimer(int aiTimerID)
 	If !F4MP.IsConnected()
-		F4MP.Tick(playerRef)
+		F4MP.Tick()
 		StartTimer(0, aiTimerID)
 		return
 	EndIf
 
 	If aiTimerID == tickTimerID
-		F4MP.Tick(playerRef)
 		StartTimer(0, tickTimerID)
-	ElseIf aiTimerID == updateTimerID
+		
 		;; ***************************************
 		;If chosenActor != None
 		;	chosenActor.PathToReference(targetRef, 1.0)
@@ -214,25 +204,45 @@ Event OnTimer(int aiTimerID)
 		;
 		;; ***************************************
 
-		Actor player = playerRef
+		Actor player = Game.GetPlayer()
 
 		int playerEntityID = F4MP.GetPlayerEntityID()
 		If F4MP.IsEntityValid(playerEntityID)
+			F4MP.SetEntityPosition(playerEntityID, player.GetPositionX(), player.GetPositionY(), player.GetPositionZ())
 			F4MP.SetEntVarNum(playerEntityID, "angleX", player.GetAngleX())
 			F4MP.SetEntVarNum(playerEntityID, "angleY", player.GetAngleY())
 			F4MP.SetEntVarNum(playerEntityID, "angleZ", player.GetAngleZ())
 			F4MP.SetEntVarNum(playerEntityID, "health", player.GetValuePercentage(healthAV))
 		EndIf
-		StartTimer(0, updateTimerID)
-	ElseIf aiTimerID == queryTimerID
-		Actor randomActor = Game.FindRandomActorFromRef(Game.GetPlayer(), 10000.0)
-		If randomActor != None && randomActor as F4MPPlayer == None && randomActor != Game.GetPlayer()
-			If npcs.Find(randomActor) < 0
-				npcs.Add(randomActor)
-				F4MP.SpawnEntity(randomActor, randomActor.x, randomActor.y, randomActor.z, randomActor.GetAngleX(), randomActor.GetAngleY(), randomActor.GetAngleZ())
-			EndIf
-		EndIf
 
+		;int i = 0
+		;While i < myNPCs.length
+		;	Actor myNPC = myNPCs[i]
+		;	F4MP.SetEntityPosition(F4MP.GetEntityID(myNPC), myNPC.x, myNPC.y, myNPC.z)
+		;	i += 1
+		;EndWhile
+
+		F4MP.Tick()
+
+		;i = 0
+		;While i < othersNPCs.length
+		;	Actor othersNPC = othersNPCs[i]
+		;	float[] position = F4MP.GetEntityPosition(F4MP.GetEntityID(othersNPC))
+		;	float distance = Math.Sqrt(Math.Pow(position[0] - othersNPC.x, 2) + Math.Pow(position[1] - othersNPC.y, 2) + Math.Pow(position[2] - othersNPC.z, 2))
+		;	othersNPC.TranslateTo(position[0], position[1], position[2], 0.0, 0.0, othersNPC.GetAngleZ(), distance * 3.0, 200.0)
+		;	i += 1
+		;EndWhile
+
+		; Debug.Notification(F4MP.GetPlayerEntityID() + " " + player.GetPositionX() + " " + player.GetPositionY() + " " + player.GetPositionZ())
+	ElseIf aiTimerID == queryTimerID
 		StartTimer(0, queryTimerID)
+
+		;Actor randomActor = Game.FindRandomActorFromRef(Game.GetPlayer(), 10000.0)
+		;If randomActor != None && randomActor as F4MPPlayer == None && randomActor != Game.GetPlayer()
+		;	If myNPCs.Find(randomActor) < 0 && othersNPCs.Find(randomActor) < 0
+		;		myNPCs.Add(randomActor)
+		;		F4MP.SpawnEntity(randomActor, randomActor.x, randomActor.y, randomActor.z, randomActor.GetAngleX(), randomActor.GetAngleY(), randomActor.GetAngleZ())
+		;	EndIf
+		;EndIf
 	EndIf
 EndEvent

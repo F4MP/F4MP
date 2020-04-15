@@ -40,6 +40,7 @@ namespace f4mp
 		zpl_vec3 angles;
 
 		u32 entityID;
+		u32 ownerEntityID;
 	};
 
 	struct AppearanceData

@@ -9,13 +9,14 @@ namespace f4mp
 	public:
 		static Entity* Get(librg_entity* entity);
 		static Entity* Get(librg_event* event);
+		static Entity* Get(librg_peer* peer);
 
-		template<class T> static T* GetAs(librg_entity* entity);
-		template<class T> static T* GetAs(librg_event* event);
+		template<class T, class U> static T* GetAs(U entity);
 
 		static Entity* Create(librg_entity* entity);
 		static Entity* Create(librg_event* event);
 
+		Entity();
 		virtual ~Entity();
 
 		virtual void OnConnectRequest(librg_event* event);
@@ -28,17 +29,17 @@ namespace f4mp
 		virtual void OnEntityRemove(librg_event* event);
 
 		virtual void OnClientUpdate(librg_event* event);
+
+		u32 GetEntityID() const;
+		void SetEntityID(u32 id);
+
+	private:
+		u32 entityID;
 	};
 
-	template<class T>
-	T* Entity::GetAs(librg_entity* entity)
+	template<class T, class U>
+	T* Entity::GetAs(U entity)
 	{
 		return dynamic_cast<T*>(Get(entity));
-	}
-
-	template<class T>
-	T* Entity::GetAs(librg_event* event)
-	{
-		return dynamic_cast<T*>(Get(event));
 	}
 }

@@ -21,6 +21,7 @@ namespace f4mp
         {
             Player* player = new Player{};
             event->user_data = player;
+            event->peer->data = player;
 
             player->OnConnectRequest(event);
 
@@ -48,7 +49,8 @@ namespace f4mp
             enet_peer_timeout(event->peer, UINT32_MAX, UINT32_MAX, UINT32_MAX);
             librg_entity_control_set(event->ctx, event->entity->id, event->peer);
             librg_entity_visibility_set(event->ctx, event->entity->id, LIBRG_ALWAYS_VISIBLE);
-            
+            //librg_entity_world_set(event->ctx, event->entity->id, 0);
+
             librg_log("%p\n", event->user_data);
 
             event->entity->user_data = event->user_data;
@@ -59,6 +61,7 @@ namespace f4mp
                 return;
             }
             
+            entity->SetEntityID(event->entity->id);
             entity->OnConnectAccept(event);
         }
 
@@ -167,10 +170,14 @@ namespace f4mp
 
             librg_entity* entity = librg_entity_create(msg->ctx, EntityType::NPC);
             librg_entity_control_set(msg->ctx, entity->id, msg->peer);
+
+            entity->position = data.position;
             
             Entity::Create(entity);
 
             data.entityID = entity->id;
+            data.ownerEntityID = Entity::GetAs<Player>(msg->peer)->GetEntityID();
+
             instance->entityIDs[data.formID] = data.entityID;
             
             librg_message_send_all(msg->ctx, MessageType::SpawnEntity, &data, sizeof(SpawnData));
@@ -185,7 +192,7 @@ namespace f4mp
 
             librg_ctx ctx = { 0 };
 
-            ctx.tick_delay = 10;
+            ctx.tick_delay = 1.0;
             ctx.mode = LIBRG_MODE_SERVER;
             ctx.world_size = zpl_vec3f(FLT_MAX, FLT_MAX, FLT_MAX);
             ctx.min_branch_size = zpl_vec3f(-1, -1, -1);

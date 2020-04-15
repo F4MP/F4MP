@@ -60,11 +60,11 @@ void f4mp::Player::OnEntityUpdate(librg_event* event)
 {
 	Entity::OnEntityUpdate(event);
 
-	numbers["angleX"] = librg_data_rf32(event->data);
-	numbers["angleY"] = librg_data_rf32(event->data);
-	numbers["angleZ"] = librg_data_rf32(event->data);
+	SetNumber("angleX", librg_data_rf32(event->data));
+	SetNumber("angleY", librg_data_rf32(event->data));
+	SetNumber("angleZ", librg_data_rf32(event->data));
 
-	numbers["health"] = librg_data_rf32(event->data);
+	SetNumber("health", librg_data_rf32(event->data));
 
 	SetAnimStateID(librg_data_ri32(event->data));
 }
@@ -107,11 +107,11 @@ void f4mp::Player::OnClientUpdate(librg_event* event)
 
 	prevPosition = event->entity->position;
 
-	librg_data_wf32(event->data, numbers["angleX"]);
-	librg_data_wf32(event->data, numbers["angleY"]);
-	librg_data_wf32(event->data, numbers["angleZ"]);
+	librg_data_wf32(event->data, GetNumber("angleX"));
+	librg_data_wf32(event->data, GetNumber("angleY"));
+	librg_data_wf32(event->data, GetNumber("angleZ"));
 
-	librg_data_wf32(event->data, numbers["health"]);
+	librg_data_wf32(event->data, GetNumber("health"));
 
 	librg_data_wi32(event->data, GetAnimStateID());
 }
@@ -128,11 +128,31 @@ SInt32 f4mp::Player::GetInteger(const std::string& name) const
 
 void f4mp::Player::SetNumber(const std::string& name, Float32 number)
 {
+	if (F4MP::GetInstance().player.get() == this)
+	{
+		for (auto& instance : F4MP::instances)
+		{
+			instance->player->numbers[name] = number;
+		}
+
+		return;
+	}
+
 	numbers[name] = number;
 }
 
 void f4mp::Player::SetInteger(const std::string& name, SInt32 integer)
 {
+	if (F4MP::GetInstance().player.get() == this)
+	{
+		for (auto& instance : F4MP::instances)
+		{
+			instance->player->integers[name] = integer;
+		}
+
+		return;
+	}
+
 	integers[name] = integer;
 }
 
@@ -153,7 +173,7 @@ float f4mp::Player::GetLookAngle() const
 
 void f4mp::Player::SetAnimStateID(SInt32 id)
 {
-	integers["animState"] = id;
+	SetInteger("animState", id);
 }
 
 void f4mp::Player::SetAnimState(const std::string& name)
@@ -210,9 +230,10 @@ void f4mp::Player::OnDisonnect(librg_event* event)
 
 int f4mp::Player::GetWalkDir(const zpl_vec2& displacement, float lookAngle)
 {
-	const float walkThreshold = 10.f;
+	const float walkThreshold = 1.f;
 
 	float speed = zpl_vec2_mag(displacement);
+	printf("%f\n", speed);
 	if (speed < walkThreshold)
 	{
 		return -1;

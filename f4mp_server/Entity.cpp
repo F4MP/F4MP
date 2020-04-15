@@ -17,6 +17,11 @@ f4mp::Entity* f4mp::Entity::Get(librg_event* event)
 	return Get(event->entity);
 }
 
+f4mp::Entity* f4mp::Entity::Get(librg_peer* peer)
+{
+	return (Entity*)peer->data;
+}
+
 f4mp::Entity* f4mp::Entity::Create(librg_entity* entity)
 {
 	Entity* ent = nullptr;
@@ -32,6 +37,7 @@ f4mp::Entity* f4mp::Entity::Create(librg_entity* entity)
 		break;
 	}
 
+	ent->SetEntityID(entity->id);
 	entity->user_data = ent;
 
 	return ent;
@@ -40,6 +46,10 @@ f4mp::Entity* f4mp::Entity::Create(librg_entity* entity)
 f4mp::Entity* f4mp::Entity::Create(librg_event* event)
 {
 	return Create(event->entity);
+}
+
+f4mp::Entity::Entity() : entityID((u32)-1)
+{
 }
 
 f4mp::Entity::~Entity()
@@ -79,4 +89,14 @@ void f4mp::Entity::OnEntityRemove(librg_event* event)
 
 void f4mp::Entity::OnClientUpdate(librg_event* event)
 {
+}
+
+u32 f4mp::Entity::GetEntityID() const
+{
+	return entityID;
+}
+
+void f4mp::Entity::SetEntityID(u32 id)
+{
+	entityID = id;
 }

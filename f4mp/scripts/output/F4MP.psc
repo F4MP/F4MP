@@ -6,13 +6,12 @@ Function SetClient(int instanceID) global native
 bool Function IsConnected() global native
 bool Function Connect(Actor player, ActorBase playerActorBase, string address, int port) global native
 bool Function Disconnect() global native
-Function Tick(Actor player) global native
+Function Tick() global native
 
 int Function GetPlayerEntityID() global native
 int Function GetEntityID(ObjectReference ref) global native
 
 bool Function IsEntityValid(int entityID) global native
-bool Function IsEntityMine(int entityID) global native
 
 float[] Function GetEntityPosition(int entityID) global native
 Function SetEntityPosition(int entityID, float x, float y, float z) global native

@@ -1,4 +1,5 @@
 #define LIBRG_IMPLEMENTATION
+//#define LIBRG_DISABLE_FEATURE_ENTITY_VISIBILITY
 
 #include "Server.h"
 

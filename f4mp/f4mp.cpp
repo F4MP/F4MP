@@ -38,6 +38,7 @@ f4mp::F4MP& f4mp::F4MP::GetInstance()
 
 f4mp::F4MP::F4MP() : ctx{}, port(0), handle(kPluginHandle_Invalid), messaging(nullptr), papyrus(nullptr), task(nullptr)
 {
+	ctx.tick_delay = 1.0;
 	ctx.mode = LIBRG_MODE_CLIENT;
 
 	librg_init(&ctx);
@@ -87,6 +88,12 @@ f4mp::F4MP::~F4MP()
 
 bool f4mp::F4MP::Init(const F4SEInterface* f4se)
 {
+	FILE* tmp = nullptr;
+	AllocConsole();
+	freopen_s(&tmp, "CONOUT$", "w", stdout);
+
+	printf("console opened\n");
+
 	handle = f4se->GetPluginHandle();
 
 	messaging = (F4SEMessagingInterface*)f4se->QueryInterface(kInterface_Messaging);
@@ -123,16 +130,16 @@ bool f4mp::F4MP::Init(const F4SEInterface* f4se)
 			vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, bool>("IsConnected", "F4MP", IsConnected, vm));
 			vm->RegisterFunction(new NativeFunction4<StaticFunctionTag, bool, Actor*, TESNPC*, BSFixedString, SInt32>("Connect", "F4MP", Connect, vm));
 			vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, bool>("Disconnect", "F4MP", Disconnect, vm));
-			vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("Tick", "F4MP", Tick, vm));
-			//vm->SetFunctionFlags("F4MP", "Tick", IFunction::kFunctionFlag_NoWait);
+			vm->RegisterFunction(new NativeFunction1<StaticFunctionTag, void, Actor*>("Tick", "F4MP", Tick, vm));
 
 			vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, UInt32>("GetPlayerEntityID", "F4MP", GetPlayerEntityID, vm));
 			vm->RegisterFunction(new NativeFunction1<StaticFunctionTag, UInt32, TESObjectREFR*>("GetEntityID", "F4MP", GetEntityID, vm));
 
 			vm->RegisterFunction(new NativeFunction1<StaticFunctionTag, bool, UInt32>("IsEntityValid", "F4MP", IsEntityValid, vm));
+			vm->RegisterFunction(new NativeFunction1<StaticFunctionTag, bool, UInt32>("IsEntityMine", "F4MP", IsEntityMine, vm));
+
 			vm->RegisterFunction(new NativeFunction1<StaticFunctionTag, VMArray<Float32>, UInt32>("GetEntityPosition", "F4MP", GetEntityPosition, vm));
 			vm->RegisterFunction(new NativeFunction4<StaticFunctionTag, void, UInt32, Float32, Float32, Float32>("SetEntityPosition", "F4MP", SetEntityPosition, vm));
-			vm->SetFunctionFlags("F4MP", "SetEntityPosition", IFunction::kFunctionFlag_NoWait);
 
 			vm->RegisterFunction(new NativeFunction3<StaticFunctionTag, void, UInt32, BSFixedString, Float32>("SetEntVarNum", "F4MP", SetEntVarNum, vm));
 			vm->RegisterFunction(new NativeFunction2<StaticFunctionTag, void, UInt32, BSFixedString>("SetEntVarAnim", "F4MP", SetEntVarAnim, vm));
@@ -179,6 +186,33 @@ bool f4mp::F4MP::Init(const F4SEInterface* f4se)
 			vm->RegisterFunction(new NativeFunction3<StaticFunctionTag, void, UInt32, UInt32, Float32>("PlayerHit", "F4MP", PlayerHit, vm));
 			vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("PlayerFireWeapon", "F4MP", PlayerFireWeapon, vm));
 			vm->RegisterFunction(new NativeFunction7<StaticFunctionTag, void, TESObjectREFR*, Float32, Float32, Float32, Float32, Float32, Float32>("SpawnEntity", "F4MP", SpawnEntity, vm));
+
+			vm->SetFunctionFlags("F4MP", "GetClientInstanceID", IFunction::kFunctionFlag_NoWait);
+			vm->SetFunctionFlags("F4MP", "SetClient", IFunction::kFunctionFlag_NoWait);
+			vm->SetFunctionFlags("F4MP", "IsConnected", IFunction::kFunctionFlag_NoWait);
+			vm->SetFunctionFlags("F4MP", "Connect", IFunction::kFunctionFlag_NoWait);
+			vm->SetFunctionFlags("F4MP", "Disconnect", IFunction::kFunctionFlag_NoWait);
+			vm->SetFunctionFlags("F4MP", "Tick", IFunction::kFunctionFlag_NoWait);
+			vm->SetFunctionFlags("F4MP", "GetPlayerEntityID", IFunction::kFunctionFlag_NoWait);
+			vm->SetFunctionFlags("F4MP", "GetEntityID", IFunction::kFunctionFlag_NoWait);
+			vm->SetFunctionFlags("F4MP", "IsEntityValid", IFunction::kFunctionFlag_NoWait);
+			vm->SetFunctionFlags("F4MP", "IsEntityMine", IFunction::kFunctionFlag_NoWait);
+			vm->SetFunctionFlags("F4MP", "GetEntityPosition", IFunction::kFunctionFlag_NoWait);
+			vm->SetFunctionFlags("F4MP", "SetEntityPosition", IFunction::kFunctionFlag_NoWait);
+			vm->SetFunctionFlags("F4MP", "SetEntVarNum", IFunction::kFunctionFlag_NoWait);
+			vm->SetFunctionFlags("F4MP", "SetEntVarAnim", IFunction::kFunctionFlag_NoWait);
+			vm->SetFunctionFlags("F4MP", "GetEntVarNum", IFunction::kFunctionFlag_NoWait);
+			vm->SetFunctionFlags("F4MP", "GetEntVarAnim", IFunction::kFunctionFlag_NoWait);
+			vm->SetFunctionFlags("F4MP", "Atan2", IFunction::kFunctionFlag_NoWait);
+			vm->SetFunctionFlags("F4MP", "GetWalkDir", IFunction::kFunctionFlag_NoWait);
+			vm->SetFunctionFlags("F4MP", "GetAction", IFunction::kFunctionFlag_NoWait);
+			vm->SetFunctionFlags("F4MP", "Inspect", IFunction::kFunctionFlag_NoWait);
+			vm->SetFunctionFlags("F4MP", "AnimLoops", IFunction::kFunctionFlag_NoWait);
+			vm->SetFunctionFlags("F4MP", "CopyAppearance", IFunction::kFunctionFlag_NoWait);
+			vm->SetFunctionFlags("F4MP", "CopyWornItems", IFunction::kFunctionFlag_NoWait);
+			vm->SetFunctionFlags("F4MP", "PlayerHit", IFunction::kFunctionFlag_NoWait);
+			vm->SetFunctionFlags("F4MP", "PlayerFireWeapon", IFunction::kFunctionFlag_NoWait);
+			vm->SetFunctionFlags("F4MP", "SpawnEntity", IFunction::kFunctionFlag_NoWait);
 
 			return true;
 		}))
@@ -372,6 +406,8 @@ void f4mp::F4MP::OnFireWeapon(librg_message* msg)
 
 	_MESSAGE("OnFireWeapon: %u", entity);
 
+	printf("OnFireWeapon: %u\n", entity);
+
 	F4MP& self = GetInstance();
 	self.papyrus->GetExternalEventRegistrations("OnFireWeapon", &entity, [](UInt64 handle, const char* scriptName, const char* callbackName, void* dataPtr)
 		{
@@ -390,6 +426,11 @@ void f4mp::F4MP::OnSpawnEntity(librg_message* msg)
 	librg_data_rptr(msg->data, &data, sizeof(SpawnData));
 
 	self.entityIDs[data.formID] = data.entityID;
+
+	if (data.ownerEntityID == self.player->GetEntityID())
+	{
+		self.myEntities.insert(data.entityID);
+	}
 
 	_MESSAGE("OnSpawnEntity: %u(%x)", data.entityID, data.formID);
 
@@ -446,13 +487,24 @@ bool f4mp::F4MP::Disconnect(StaticFunctionTag* base)
 	return true;
 }
 
-void f4mp::F4MP::Tick(StaticFunctionTag* base)
+void f4mp::F4MP::Tick(StaticFunctionTag* base, Actor* player)
 {
+	printf("tick %llu\n", time(nullptr));
+
 	//F4MP& self = GetInstance();
 	//librg_tick(&self.ctx);
 
 	for (auto& instance : instances)
 	{
+		if (librg_is_connected(&instance->ctx))
+		{
+			librg_entity* playerEntity = instance->FetchEntity(instance->player->GetEntityID());
+			if (playerEntity)
+			{
+				playerEntity->position = { player->pos.x, player->pos.y, player->pos.z };
+			}
+		}
+
 		librg_tick(&instance->ctx);
 	}
 }
@@ -480,6 +532,12 @@ bool f4mp::F4MP::IsEntityValid(StaticFunctionTag* base, UInt32 entityID)
 {
 	F4MP& self = GetInstance();
 	return !!librg_entity_valid(&self.ctx, entityID);
+}
+
+bool f4mp::F4MP::IsEntityMine(StaticFunctionTag* base, UInt32 entityID)
+{
+	F4MP& self = GetInstance();
+	return self.myEntities.find(entityID) != self.myEntities.end();
 }
 
 VMArray<Float32> f4mp::F4MP::GetEntityPosition(StaticFunctionTag* base, UInt32 entityID)
