@@ -183,6 +183,36 @@ namespace f4mp
             librg_message_send_all(msg->ctx, MessageType::SpawnEntity, &data, sizeof(SpawnData));
         }
 
+        static void OnSyncEntity(librg_message* msg)
+        {
+            SyncData data;
+            librg_data_rptr(msg->data, &data, sizeof(SyncData));
+
+            u32 callerID = Entity::Get(msg->peer)->GetEntityID();
+            float minDist = zpl_vec3_mag2(data.position - librg_entity_fetch(msg->ctx, callerID)->position);
+
+            librg_entity_iteratex(msg->ctx, LIBRG_ENTITY_ALIVE, id,
+                {
+                    if (id == callerID)
+                    {
+                        continue;
+                    }
+
+                    librg_entity* entity = librg_entity_fetch(msg->ctx, id);
+                    if (Entity::GetAs<Player>(entity) == nullptr)
+                    {
+                        continue;
+                    }
+
+                    if (zpl_vec3_mag2(data.position - entity->position) < minDist)
+                    {
+                        return;
+                    }
+                });
+
+            librg_message_send_except(msg->ctx, MessageType::SyncEntity, msg->peer, &data, sizeof(SyncData));
+        }
+
     public:
         Server(const std::string& address)
         {
@@ -215,6 +245,7 @@ namespace f4mp
             librg_network_add(&ctx, MessageType::Hit, OnHit);
             librg_network_add(&ctx, MessageType::FireWeapon, OnFireWeapon);
             librg_network_add(&ctx, MessageType::SpawnEntity, OnSpawnEntity);
+            librg_network_add(&ctx, MessageType::SyncEntity, OnSyncEntity);
 
             librg_network_start(&ctx, librg_address{ 7779, const_cast<char*>(address.c_str()) });
 

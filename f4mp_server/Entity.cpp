@@ -50,6 +50,7 @@ f4mp::Entity* f4mp::Entity::Create(librg_event* event)
 
 f4mp::Entity::Entity() : entityID((u32)-1)
 {
+
 }
 
 f4mp::Entity::~Entity()
@@ -81,6 +82,9 @@ void f4mp::Entity::OnEntityCreate(librg_event* event)
 
 void f4mp::Entity::OnEntityUpdate(librg_event* event)
 {
+	librg_data_wf32(event->data, angles[0]);
+	librg_data_wf32(event->data, angles[1]);
+	librg_data_wf32(event->data, angles[2]);
 }
 
 void f4mp::Entity::OnEntityRemove(librg_event* event)
@@ -89,6 +93,9 @@ void f4mp::Entity::OnEntityRemove(librg_event* event)
 
 void f4mp::Entity::OnClientUpdate(librg_event* event)
 {
+	angles[0] = librg_data_rf32(event->data);
+	angles[1] = librg_data_rf32(event->data);
+	angles[2] = librg_data_rf32(event->data);
 }
 
 u32 f4mp::Entity::GetEntityID() const

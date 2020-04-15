@@ -16,6 +16,7 @@ namespace f4mp
 		template<class T>
 		static T* GetAs(librg_entity* entity);
 
+		Entity();
 		virtual ~Entity();
 
 		static Entity* Create(librg_event* event);
@@ -29,6 +30,12 @@ namespace f4mp
 		virtual void OnEntityRemove(librg_event* event);
 
 		virtual void OnClientUpdate(librg_event* event);
+
+		Float32 GetNumber(const std::string& name) const;
+		void SetNumber(const std::string& name, Float32 number);
+
+	private:
+		std::unordered_map<std::string, Float32> numbers;
 	};
 
 	template<class T>

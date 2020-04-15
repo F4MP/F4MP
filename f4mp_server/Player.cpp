@@ -66,10 +66,6 @@ void f4mp::Player::OnEntityUpdate(librg_event* event)
 {
     Entity::OnEntityUpdate(event);
     
-    librg_data_wf32(event->data, angles[0]);
-    librg_data_wf32(event->data, angles[1]);
-    librg_data_wf32(event->data, angles[2]);
-
     librg_data_wf32(event->data, health);
 
     librg_data_wi32(event->data, animState);
@@ -78,10 +74,6 @@ void f4mp::Player::OnEntityUpdate(librg_event* event)
 void f4mp::Player::OnClientUpdate(librg_event* event)
 {
     Entity::OnClientUpdate(event);
-
-    angles[0] = librg_data_rf32(event->data);
-    angles[1] = librg_data_rf32(event->data);
-    angles[2] = librg_data_rf32(event->data);
 
     health = librg_data_rf32(event->data);
 

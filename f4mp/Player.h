@@ -22,7 +22,6 @@ namespace f4mp
 
 		// TODO: might wanna move them to the Entity class.
 		// NOTE: in that case, fix the ~EntVar~ functions to also work with the Entity class.
-		std::unordered_map<std::string, Float32> numbers;
 		std::unordered_map<std::string, SInt32> integers;
 
 	public:
@@ -44,9 +43,7 @@ namespace f4mp
 
 		void OnClientUpdate(librg_event* event) override;
 
-		Float32 GetNumber(const std::string& name) const;
 		SInt32 GetInteger(const std::string& name) const;
-		void SetNumber(const std::string& name, Float32 number);
 		void SetInteger(const std::string& name, SInt32 integer);
 
 		SInt32 GetAnimStateID() const;

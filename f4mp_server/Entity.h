@@ -35,6 +35,8 @@ namespace f4mp
 
 	private:
 		u32 entityID;
+
+		float angles[3];
 	};
 
 	template<class T, class U>

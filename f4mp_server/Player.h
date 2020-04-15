@@ -19,8 +19,6 @@ namespace f4mp
 		const WornItemsData& GetWornItems() const;
 
 	private:
-		float angles[3];
-
 		float health;
 
 		int animState;

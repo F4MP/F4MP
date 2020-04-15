@@ -3,6 +3,7 @@ Scriptname F4MPQuest extends Quest
 int tickTimerID = 10
 int updateTimerID = 20
 int queryTimerID = 30
+int syncTimerID = 40
 
 Actor Property playerRef Auto
 
@@ -14,8 +15,6 @@ Spell Property entitySyncSpell Auto
 
 int[] playerIDs
 F4MPPlayer[] players
-
-Actor[] npcs
 
 Event OnInit()
 	RegisterForKey(112)
@@ -37,23 +36,6 @@ Function OnEntityCreate(int entityID, Form[] itemsToWear)
 	EndIf
 EndFunction
 
-Function OnEntityUpdate(int entityID)
-	; int index = playerIDs.Find(entityID)
-	; If index < 0
-	;  	return
-	; EndIf
-	
-	; F4MPPlayer player = players[index];
-	; If F4MP.IsEntityValid(player.entityID)
-	; 	float[] position = F4MP.GetEntityPosition(player.entityID)
-	; 	float angleX = 0.0; F4MP.ReadNumber()
-	; 	float angleY = 0.0; F4MP.ReadNumber()
-	; 	float angleZ = 0.0; F4MP.ReadNumber()
-	; 	Debug.Trace(position[0] + " " + position[1] + " " +  position[2] + " " +  angleX + " " + angleY + " " + angleZ)
-	; 	player.TranslateTo(position[0], position[1], position[2], angleX, angleY, angleZ, 200.0, 100.0)
-	; EndIf
-EndFunction
-
 Function OnEntityRemove(int entityID)
 	int index = playerIDs.Find(entityID)
 	If index < 0
@@ -63,19 +45,6 @@ Function OnEntityRemove(int entityID)
 	players[index].Delete()
 	playerIDs.Remove(index)
 	players.Remove(index)
-EndFunction
-
-Function OnClientUpdate(int entityID)
-	; Actor player = Game.GetPlayer()
-
-	; int playerEntityID = F4MP.GetPlayerEntityID()
-	; If F4MP.IsEntityValid(playerEntityID)
-	;	F4MP.SetEntityPosition(playerEntityID, player.GetPositionX(), player.GetPositionY(), player.GetPositionZ())
-
-	;	F4MP.WriteNumber(player.GetAngleX())
-	;	F4MP.WriteNumber(player.GetAngleY())
-	;	F4MP.WriteNumber(player.GetAngleZ())
-	; EndIf
 EndFunction
 
 Function OnPlayerHit(float damage)
@@ -100,11 +69,6 @@ Function OnSpawnEntity(int formID)
 	Actor actorRef = ref as Actor
 	If actorRef != None
 		actorRef.AddSpell(entitySyncSpell)
-
-		; just in case
-		If npcs.Find(actorRef) < 0
-			npcs.Add(actorRef)
-		EndIf
 	EndIf
 EndFunction
 
@@ -124,6 +88,7 @@ bool Function Connect(string address, int port)
 	
 	StartTimer(0, tickTimerID)
 	StartTimer(0, updateTimerID)
+	StartTimer(0, syncTimerID)
 	return F4MP.Connect(client, clientActorBase, address, port)
 EndFunction
 
@@ -134,7 +99,6 @@ Event OnKeyDown(int keyCode)
 		playerIDs = new int[0]
 		players = new F4MPPlayer[0]		
 
-		npcs = new Actor[0]
 		StartTimer(0, queryTimerID)
 
 		;Actor player = Game.GetPlayer()
@@ -149,9 +113,7 @@ Event OnKeyDown(int keyCode)
 		; RegisterForExternalEvent("OnCopyWornItems", "OnCopyWornItems")
 
 		RegisterForExternalEvent("OnEntityCreate", "OnEntityCreate")
-		RegisterForExternalEvent("OnEntityUpdate", "OnEntityUpdate")
 		RegisterForExternalEvent("OnEntityRemove", "OnEntityRemove")
-		RegisterForExternalEvent("OnClientUpdate", "OnClientUpdate")
 
 		RegisterForExternalEvent("OnPlayerHit", "OnPlayerHit")
 		RegisterForExternalEvent("OnFireWeapon", "OnFireWeapon")
@@ -169,6 +131,14 @@ Event OnKeyDown(int keyCode)
 
 	;		Debug.Notification(chosenActor.GetDisplayName() + " " + targetRef.GetDisplayName())
 	;	EndIf
+
+		ObjectReference[] refs = F4MP.GetRefsInCell(playerRef.GetParentCell())
+		Debug.Notification(refs.length)
+		int i = 0
+		While i < refs.length
+			Debug.Trace(refs[i] + " " + refs[i].GetDisplayName())
+			i += 1
+		EndWhile
 	EndIf
 EndEvent
 
@@ -214,25 +184,33 @@ Event OnTimer(int aiTimerID)
 		;
 		;; ***************************************
 
-		Actor player = playerRef
-
 		int playerEntityID = F4MP.GetPlayerEntityID()
 		If F4MP.IsEntityValid(playerEntityID)
-			F4MP.SetEntVarNum(playerEntityID, "angleX", player.GetAngleX())
-			F4MP.SetEntVarNum(playerEntityID, "angleY", player.GetAngleY())
-			F4MP.SetEntVarNum(playerEntityID, "angleZ", player.GetAngleZ())
-			F4MP.SetEntVarNum(playerEntityID, "health", player.GetValuePercentage(healthAV))
+			F4MP.SetEntVarNum(playerEntityID, "health", playerRef.GetValuePercentage(healthAV))
 		EndIf
 		StartTimer(0, updateTimerID)
 	ElseIf aiTimerID == queryTimerID
-		Actor randomActor = Game.FindRandomActorFromRef(Game.GetPlayer(), 10000.0)
-		If randomActor != None && randomActor as F4MPPlayer == None && randomActor != Game.GetPlayer()
-			If npcs.Find(randomActor) < 0
-				npcs.Add(randomActor)
-				F4MP.SpawnEntity(randomActor, randomActor.x, randomActor.y, randomActor.z, randomActor.GetAngleX(), randomActor.GetAngleY(), randomActor.GetAngleZ())
-			EndIf
-		EndIf
-
+		F4MP.SyncWorld()
 		StartTimer(0, queryTimerID)
+	ElseIf aiTimerID == syncTimerID
+		int[] formIDs = F4MP.GetEntitySyncFormIDs(false)
+		float[] transforms = F4MP.GetEntitySyncTransforms(true)
+	
+		int i = 0
+		While i < formIDs.length
+			ObjectReference ref = Game.GetForm(formIDs[i]) as ObjectReference
+			If ref != None
+				int offset = i * 6
+				float x = transforms[offset]
+				float y = transforms[offset + 1]
+				float z = transforms[offset + 2]
+				float distance = Math.Sqrt(Math.Pow(x - ref.x, 2) + Math.Pow(y - ref.y, 2) + Math.Pow(z - ref.z, 2))
+				ref.TranslateTo(x, y, z, transforms[offset + 3], transforms[offset + 4], transforms[offset + 5], distance * 3.0, 500.0)	
+			EndIf
+			
+			i += 1
+		EndWhile
+
+		StartTimer(0, syncTimerID)
 	EndIf
 EndEvent

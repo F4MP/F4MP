@@ -7,6 +7,7 @@ bool Function IsConnected() global native
 bool Function Connect(Actor player, ActorBase playerActorBase, string address, int port) global native
 bool Function Disconnect() global native
 Function Tick(Actor player) global native
+Function SyncWorld() global native
 
 int Function GetPlayerEntityID() global native
 int Function GetEntityID(ObjectReference ref) global native
@@ -21,6 +22,7 @@ Function SetEntVarAnim(int entityID, string animState) global native
 float Function GetEntVarNum(int entityID, string name) global native
 string Function GetEntVarAnim(int entityID) global native
 
+ObjectReference[] Function GetRefsInCell(Cell cell) global native
 float Function Atan2(float y, float x) global native
 string Function GetWalkDir(float dX, float dY, float angleZ) global native
 Action Function GetAction(string name) global native
@@ -32,4 +34,6 @@ Function CopyWornItems(Actor src, Actor dest) global native
 
 Function PlayerHit(int hitter, int hittee, float damage) global native
 Function PlayerFireWeapon() global native
-Function SpawnEntity(ObjectReference ref, float x, float y, float z, float angleX, float angleY, float angleZ) global native
+
+int[] Function GetEntitySyncFormIDs(bool clear) global native
+float[] Function GetEntitySyncTransforms(bool clear) global native

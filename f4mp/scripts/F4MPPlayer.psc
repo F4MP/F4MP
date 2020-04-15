@@ -235,12 +235,6 @@ Event OnTimer(int aiTimerID)
 		If itemsToWear != None
 			int i = 0
 			While i < itemsToWear.length
-				Debug.Trace(itemsToWear[i].GetName())
-				i += 1
-			EndWhile
-			
-			i = 0
-			While i < itemsToWear.length
 				EquipItem(itemsToWear[i])
 				i += 1
 			EndWhile
@@ -253,14 +247,12 @@ Event OnTimer(int aiTimerID)
 			EndIf
 			
 			float[] position = F4MP.GetEntityPosition(entityID)
-			float angleX = F4MP.GetEntVarNum(entityID, "angleX")
-			float angleY = F4MP.GetEntVarNum(entityID, "angleY")
 			float angleZ = F4MP.GetEntVarNum(entityID, "angleZ")
 			float distance = Math.Sqrt(Math.Pow(position[0] - x, 2) + Math.Pow(position[1] - y, 2) + Math.Pow(position[2] - z, 2))
 
 			;health = F4MP.GetEntVarNum(entityID, "health")
 
-			TranslateTo(position[0], position[1], position[2], 0.0, 0.0, angleZ, distance * 3.0, 200.0)
+			TranslateTo(position[0], position[1], position[2], 0.0, 0.0, angleZ, distance * 3.0, 500.0)
 			;self.SetPosition(position[0], position[1], position[2])
 			;self.SetAngle(0.0, 0.0, angleZ)
 

@@ -9,11 +9,13 @@
 #include <unordered_map>
 #include <functional>
 #include <algorithm>
+#include <atomic>
 
 namespace f4mp
 {
 	class F4MP
 	{
+		friend class Entity;
 		friend class Player;
 
 	public:
@@ -52,6 +54,11 @@ namespace f4mp
 
 		std::unordered_set<UInt32> myEntities;
 
+		std::unique_ptr<std::unordered_map<UInt32, SyncData>> _entitySyncDatasFront;
+		std::unique_ptr<std::unordered_map<UInt32, SyncData>> _entitySyncDatasBack;
+		std::atomic<std::unordered_map<UInt32, SyncData>*> entitySyncDatasFront;
+		std::atomic<std::unordered_map<UInt32, SyncData>*> entitySyncDatasBack;
+
 		static void OnConnectRequest(librg_event* event);
 		static void OnConnectAccept(librg_event* event);
 		static void OnConnectRefuse(librg_event* event);
@@ -68,6 +75,7 @@ namespace f4mp
 		static void OnHit(librg_message* msg);
 		static void OnFireWeapon(librg_message* msg);
 		static void OnSpawnEntity(librg_message* msg);
+		static void OnSyncEntity(librg_message* msg);
 		
 		static UInt32 GetClientInstanceID(StaticFunctionTag* base);
 		static void SetClient(StaticFunctionTag* base, UInt32 instance);
@@ -76,6 +84,7 @@ namespace f4mp
 		static bool Connect(StaticFunctionTag* base, Actor* player, TESNPC* playerActorBase, BSFixedString address, SInt32 port);
 		static bool Disconnect(StaticFunctionTag* base);
 		static void Tick(StaticFunctionTag* base, Actor* player);
+		static void SyncWorld(StaticFunctionTag* base);
 		
 		static UInt32 GetPlayerEntityID(StaticFunctionTag* base);
 		static UInt32 GetEntityID(StaticFunctionTag* base, TESObjectREFR* ref);
@@ -91,7 +100,8 @@ namespace f4mp
 		static void SetEntVarAnim(StaticFunctionTag* base, UInt32 entityID, BSFixedString animState);
 		static Float32 GetEntVarNum(StaticFunctionTag* base, UInt32 entityID, BSFixedString name);
 		static BSFixedString GetEntVarAnim(StaticFunctionTag* base, UInt32 entityID);
-		
+
+		static VMArray<TESObjectREFR*> GetRefsInCell(StaticFunctionTag* base, TESObjectCELL* cell);
 		static Float32 Atan2(StaticFunctionTag* base, Float32 y, Float32 x);
 		static BSFixedString GetWalkDir(StaticFunctionTag* base, Float32 dX, Float32 dY, Float32 angleZ);
 		static bool AnimLoops(StaticFunctionTag* base, BSFixedString animState);
@@ -101,6 +111,8 @@ namespace f4mp
 
 		static void PlayerHit(StaticFunctionTag* base, UInt32 hitter, UInt32 hittee, Float32 damage);
 		static void PlayerFireWeapon(StaticFunctionTag* base);
-		static void SpawnEntity(StaticFunctionTag* base, TESObjectREFR* ref, Float32 x, Float32 y, Float32 z, Float32 angleX, Float32 angleY, Float32 angleZ);
+
+		static VMArray<UInt32> GetEntitySyncFormIDs(StaticFunctionTag* base, bool clear);
+		static VMArray<Float32> GetEntitySyncTransforms(StaticFunctionTag* base, bool clear);
 	};
 }

@@ -60,10 +60,6 @@ void f4mp::Player::OnEntityUpdate(librg_event* event)
 {
 	Entity::OnEntityUpdate(event);
 
-	SetNumber("angleX", librg_data_rf32(event->data));
-	SetNumber("angleY", librg_data_rf32(event->data));
-	SetNumber("angleZ", librg_data_rf32(event->data));
-
 	SetNumber("health", librg_data_rf32(event->data));
 
 	SetAnimStateID(librg_data_ri32(event->data));
@@ -107,38 +103,15 @@ void f4mp::Player::OnClientUpdate(librg_event* event)
 
 	prevPosition = event->entity->position;
 
-	librg_data_wf32(event->data, GetNumber("angleX"));
-	librg_data_wf32(event->data, GetNumber("angleY"));
-	librg_data_wf32(event->data, GetNumber("angleZ"));
-
 	librg_data_wf32(event->data, GetNumber("health"));
 
 	librg_data_wi32(event->data, GetAnimStateID());
 }
 
-Float32 f4mp::Player::GetNumber(const std::string& name) const
-{
-	return numbers.find(name)->second;
-}
-
 SInt32 f4mp::Player::GetInteger(const std::string& name) const
 {
+	// HACK: horrible
 	return integers.find(name)->second;
-}
-
-void f4mp::Player::SetNumber(const std::string& name, Float32 number)
-{
-	if (F4MP::GetInstance().player.get() == this)
-	{
-		for (auto& instance : F4MP::instances)
-		{
-			instance->player->numbers[name] = number;
-		}
-
-		return;
-	}
-
-	numbers[name] = number;
 }
 
 void f4mp::Player::SetInteger(const std::string& name, SInt32 integer)
@@ -233,7 +206,6 @@ int f4mp::Player::GetWalkDir(const zpl_vec2& displacement, float lookAngle)
 	const float walkThreshold = 1.f;
 
 	float speed = zpl_vec2_mag(displacement);
-	printf("%f\n", speed);
 	if (speed < walkThreshold)
 	{
 		return -1;
@@ -416,4 +388,8 @@ void f4mp::Player::SetWornItems(Actor* actor, const WornItemsData& wornItems)
 f4mp::Player::Player() : entityID((UInt32)-1)
 {
 	animation = std::make_unique<Animation>();
+
+	SetAnimStateID(0);
+
+	SetNumber("health", 1.f);
 }

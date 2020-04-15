@@ -14,13 +14,10 @@ Event OnLoad()
 	SetMotionType(Motion_Keyframed)
 	
 	float[] position = F4MP.GetEntityPosition(myOwner.entityID)
-	float angleZ = GetAngleZ()
-	SetPosition(position[0] + Math.Sin(angleZ) * 100.0 + Math.Cos(angleZ) * 10.0, position[1] + Math.Cos(angleZ) * 100.0 - Math.Sin(angleZ) * 10.0, position[2] + 90.0)
-
 	float ax = F4MP.GetEntVarNum(myOwner.entityID, "angleX")
-	float ay = F4MP.GetEntVarNum(myOwner.entityID, "angleY")
 	float az = F4MP.GetEntVarNum(myOwner.entityID, "angleZ")
-	SetAngle(ax, ay, az)
+	SetPosition(position[0] + Math.Sin(az) * 100.0 + Math.Cos(az) * 10.0, position[1] + Math.Cos(az) * 100.0 - Math.Sin(az) * 10.0, position[2] + 90.0)
+	SetAngle(ax, 0.0, az)
 
 	; Actor player = Game.GetPlayer()
 	; float dx = player.x - x
