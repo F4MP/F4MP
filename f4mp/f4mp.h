@@ -13,6 +13,13 @@
 
 namespace f4mp
 {
+	struct SyncDataForPapyrus
+	{
+		TESObjectREFR* ref;
+		zpl_vec3 position;
+		zpl_vec3 angles;
+	};
+
 	class F4MP
 	{
 		friend class Entity;
@@ -54,10 +61,10 @@ namespace f4mp
 
 		std::unordered_set<UInt32> myEntities;
 
-		std::unique_ptr<std::unordered_map<UInt32, SyncData>> _entitySyncDatasFront;
-		std::unique_ptr<std::unordered_map<UInt32, SyncData>> _entitySyncDatasBack;
-		std::atomic<std::unordered_map<UInt32, SyncData>*> entitySyncDatasFront;
-		std::atomic<std::unordered_map<UInt32, SyncData>*> entitySyncDatasBack;
+		std::unique_ptr<std::unordered_map<UInt32, SyncDataForPapyrus>> _entitySyncDatasFront;
+		std::unique_ptr<std::unordered_map<UInt32, SyncDataForPapyrus>> _entitySyncDatasBack;
+		std::atomic<std::unordered_map<UInt32, SyncDataForPapyrus>*> entitySyncDatasFront;
+		std::atomic<std::unordered_map<UInt32, SyncDataForPapyrus>*> entitySyncDatasBack;
 
 		static void OnConnectRequest(librg_event* event);
 		static void OnConnectAccept(librg_event* event);
@@ -112,7 +119,7 @@ namespace f4mp
 		static void PlayerHit(StaticFunctionTag* base, UInt32 hitter, UInt32 hittee, Float32 damage);
 		static void PlayerFireWeapon(StaticFunctionTag* base);
 
-		static VMArray<UInt32> GetEntitySyncFormIDs(StaticFunctionTag* base, bool clear);
+		static VMArray<TESObjectREFR*> GetEntitySyncRefs(StaticFunctionTag* base, bool clear);
 		static VMArray<Float32> GetEntitySyncTransforms(StaticFunctionTag* base, bool clear);
 	};
 }

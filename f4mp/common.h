@@ -49,6 +49,8 @@ namespace f4mp
 		u32 formID;
 		zpl_vec3 position;
 		zpl_vec3 angles;
+
+		f64 syncedTime;
 	};
 
 	struct AppearanceData

@@ -11,6 +11,7 @@
     } while (0)
 
 #include "f4mp.h"
+#include "f4se/NiNodes.h"
 
 #include <fstream>
 #include <shlobj.h>				// CSIDL_MYCODUMENTS
@@ -81,8 +82,8 @@ f4mp::F4MP::F4MP() : ctx{}, port(0), handle(kPluginHandle_Invalid), messaging(nu
 
 	configFile >> config.hostAddress;
 
-	_entitySyncDatasFront = std::make_unique<std::unordered_map<UInt32, SyncData>>();
-	_entitySyncDatasBack = std::make_unique<std::unordered_map<UInt32, SyncData>>();
+	_entitySyncDatasFront = std::make_unique<std::unordered_map<UInt32, SyncDataForPapyrus>>();
+	_entitySyncDatasBack = std::make_unique<std::unordered_map<UInt32, SyncDataForPapyrus>>();
 
 	entitySyncDatasFront.store(_entitySyncDatasFront.get());
 	entitySyncDatasBack.store(_entitySyncDatasBack.get());
@@ -195,7 +196,7 @@ bool f4mp::F4MP::Init(const F4SEInterface* f4se)
 			vm->RegisterFunction(new NativeFunction3<StaticFunctionTag, void, UInt32, UInt32, Float32>("PlayerHit", "F4MP", PlayerHit, vm));
 			vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("PlayerFireWeapon", "F4MP", PlayerFireWeapon, vm));
 
-			vm->RegisterFunction(new NativeFunction1<StaticFunctionTag, VMArray<UInt32>, bool>("GetEntitySyncFormIDs", "F4MP", GetEntitySyncFormIDs, vm));
+			vm->RegisterFunction(new NativeFunction1<StaticFunctionTag, VMArray<TESObjectREFR*>, bool>("GetEntitySyncRefs", "F4MP", GetEntitySyncRefs, vm));
 			vm->RegisterFunction(new NativeFunction1<StaticFunctionTag, VMArray<Float32>, bool>("GetEntitySyncTransforms", "F4MP", GetEntitySyncTransforms, vm));
 
 			vm->SetFunctionFlags("F4MP", "GetClientInstanceID", IFunction::kFunctionFlag_NoWait);
@@ -225,7 +226,7 @@ bool f4mp::F4MP::Init(const F4SEInterface* f4se)
 			vm->SetFunctionFlags("F4MP", "CopyWornItems", IFunction::kFunctionFlag_NoWait);
 			vm->SetFunctionFlags("F4MP", "PlayerHit", IFunction::kFunctionFlag_NoWait);
 			vm->SetFunctionFlags("F4MP", "PlayerFireWeapon", IFunction::kFunctionFlag_NoWait);
-			vm->SetFunctionFlags("F4MP", "GetEntitySyncFormIDs", IFunction::kFunctionFlag_NoWait);
+			vm->SetFunctionFlags("F4MP", "GetEntitySyncRefs", IFunction::kFunctionFlag_NoWait);
 			vm->SetFunctionFlags("F4MP", "GetEntitySyncTransforms", IFunction::kFunctionFlag_NoWait);
 
 			return true;
@@ -462,7 +463,14 @@ void f4mp::F4MP::OnSyncEntity(librg_message* msg)
 	SyncData data;
 	librg_data_rptr(msg->data, &data, sizeof(SyncData));
 
-	(*self.entitySyncDatasBack.load())[data.formID] = data;
+	//(*self.entitySyncDatasBack.load())[data.formID] = data;
+
+	TESObjectREFR* ref = dynamic_cast<TESObjectREFR*>(LookupFormByID(data.formID));
+	if (ref != nullptr)
+	{
+		(*self.entitySyncDatasBack.load())[data.formID] = { ref, data.position, data.angles };
+		//(*self.entitySyncDatasFront.load())[data.formID] = { ref, data.position, data.angles };
+	}
 }
 
 UInt32 f4mp::F4MP::GetClientInstanceID(StaticFunctionTag* base)
@@ -585,7 +593,7 @@ void f4mp::F4MP::SyncWorld(StaticFunctionTag* base)
 
 			if (distSqr < syncRadiusSqr)
 			{
-				SyncData data{ ref->formID, {ref->pos.x, ref->pos.y, ref->pos.z}, {zpl_to_degrees(ref->rot.x), zpl_to_degrees(ref->rot.y), zpl_to_degrees(ref->rot.z)} };
+				SyncData data{ ref->formID, {ref->pos.x, ref->pos.y, ref->pos.z}, {zpl_to_degrees(ref->rot.x), zpl_to_degrees(ref->rot.y), zpl_to_degrees(ref->rot.z)}, librg_time_now(&self.ctx) };
 				librg_message_send_all(&self.ctx, MessageType::SyncEntity, &data, sizeof(SyncData));
 			}
 		}
@@ -820,22 +828,27 @@ void f4mp::F4MP::PlayerFireWeapon(StaticFunctionTag* base)
 	librg_message_send_all(&self.ctx, MessageType::FireWeapon, &playerEntityID, sizeof(UInt32));
 }
 
-VMArray<UInt32> f4mp::F4MP::GetEntitySyncFormIDs(StaticFunctionTag* base, bool clear)
+VMArray<TESObjectREFR*> f4mp::F4MP::GetEntitySyncRefs(StaticFunctionTag* base, bool clear)
 {
 	F4MP& self = GetInstance();
 
-	std::vector<UInt32> syncData;
-	syncData.reserve(self.entitySyncDatasFront.load()->size());
-
-	for (const auto& data : *self.entitySyncDatasFront.load())
+	if (!librg_is_connected(&self.ctx))
 	{
-		syncData.push_back(data.second.formID);
+		return {};
 	}
 
 	if (clear)
 	{
 		self.entitySyncDatasFront.load()->clear();
-		self.entitySyncDatasFront.exchange(self.entitySyncDatasBack);
+		self.entitySyncDatasFront = self.entitySyncDatasBack.exchange(self.entitySyncDatasFront);
+	}
+
+	std::vector<TESObjectREFR*> syncData;
+	syncData.reserve(self.entitySyncDatasFront.load()->size());
+
+	for (const auto& data : *self.entitySyncDatasFront.load())
+	{
+		syncData.push_back(data.second.ref);
 	}
 
 	return syncData;
@@ -845,18 +858,23 @@ VMArray<Float32> f4mp::F4MP::GetEntitySyncTransforms(StaticFunctionTag* base, bo
 {
 	F4MP& self = GetInstance();
 
-	std::vector<Float32> syncData;
-	syncData.reserve(self.entitySyncDatasFront.load()->size() * 6);
-
-	for (const auto& data : *self.entitySyncDatasFront.load())
+	if (!librg_is_connected(&self.ctx))
 	{
-		syncData.insert(syncData.begin(), { data.second.position.x, data.second.position.y, data.second.position.z, data.second.angles.x, data.second.angles.y, data.second.angles.z });
+		return {};
 	}
 
 	if (clear)
 	{
 		self.entitySyncDatasFront.load()->clear();
-		self.entitySyncDatasFront.exchange(self.entitySyncDatasBack);
+		self.entitySyncDatasFront = self.entitySyncDatasBack.exchange(self.entitySyncDatasFront);
+	}
+	
+	std::vector<Float32> syncData;
+	syncData.reserve(self.entitySyncDatasFront.load()->size() * 6);
+
+	for (const auto& data : *self.entitySyncDatasFront.load())
+	{
+		syncData.insert(syncData.end(), { data.second.position.x, data.second.position.y, data.second.position.z, data.second.angles.x, data.second.angles.y, data.second.angles.z });
 	}
 
 	return syncData;
