@@ -16,6 +16,7 @@ namespace f4mp
 		template<class T>
 		static T* GetAs(librg_entity* entity);
 
+	public:
 		Entity();
 		virtual ~Entity();
 
@@ -31,10 +32,20 @@ namespace f4mp
 
 		virtual void OnClientUpdate(librg_event* event);
 
+		librg_entity* GetNetworkEntity();
+		TESObjectREFR* GetRef();
+		void SetRef(TESObjectREFR* ref);
+
 		Float32 GetNumber(const std::string& name) const;
 		void SetNumber(const std::string& name, Float32 number);
 
+	protected:
+		virtual void OnEntityUpdate(librg_event* event, bool syncTransform);
+
 	private:
+		librg_entity* entity;
+		TESObjectREFR* ref;
+
 		std::unordered_map<std::string, Float32> numbers;
 	};
 

@@ -24,23 +24,20 @@ f4mp::Entity* f4mp::Entity::Get(librg_peer* peer)
 
 f4mp::Entity* f4mp::Entity::Create(librg_entity* entity)
 {
-	Entity* ent = nullptr;
+	Entity* instance = nullptr;
 
 	switch (entity->type)
 	{
 	case EntityType::Player:
-		ent = new Player();
+		instance = new Player();
 		break;
 
 	case EntityType::NPC:
-		ent = new NPC();
+		instance = new NPC();
 		break;
 	}
 
-	ent->SetEntityID(entity->id);
-	entity->user_data = ent;
-
-	return ent;
+	return Create(entity, instance);
 }
 
 f4mp::Entity* f4mp::Entity::Create(librg_event* event)

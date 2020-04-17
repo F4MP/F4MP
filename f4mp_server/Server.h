@@ -5,6 +5,7 @@
 #include "server_common.h"
 #include "Entity.h"
 #include "Player.h"
+#include "NPC.h"
 
 #include <unordered_map>
 
@@ -172,14 +173,14 @@ namespace f4mp
 
 			entity->position = data.position;
 
-			Entity::Create(entity);
+			NPC* npc = Entity::Create(entity, new NPC(data.formID, data.ownerEntityID));
 
 			data.entityID = entity->id;
 			data.ownerEntityID = Entity::GetAs<Player>(msg->peer)->GetEntityID();
 
 			instance->entityIDs[data.formID] = data.entityID;
 
-			librg_message_send_all(msg->ctx, MessageType::SpawnEntity, &data, sizeof(SpawnData));
+			//librg_message_send_all(msg->ctx, MessageType::SpawnEntity, &data, sizeof(SpawnData));
 		}
 
 		static void OnSyncEntity(librg_message* msg)
@@ -199,7 +200,7 @@ namespace f4mp
 			u32 callerID = Entity::Get(msg->peer)->GetEntityID();
 			float minDist = zpl_vec3_mag2(data.position - librg_entity_fetch(msg->ctx, callerID)->position);
 
-			librg_entity_iteratex(msg->ctx, LIBRG_ENTITY_ALIVE, id,
+			librg_entity_iteratex(msg->ctx, LIBRG_ENTITY_ALIVE | LIBRG_ENTITY_CLIENT, id,
 				{
 					if (id == callerID)
 					{
@@ -207,11 +208,6 @@ namespace f4mp
 					}
 
 					librg_entity* entity = librg_entity_fetch(msg->ctx, id);
-					if (Entity::GetAs<Player>(entity) == nullptr)
-					{
-						continue;
-					}
-
 					if (zpl_vec3_mag2(data.position - entity->position) < minDist)
 					{
 						return;
@@ -232,7 +228,7 @@ namespace f4mp
 
 			librg_ctx ctx = { 0 };
 
-			ctx.tick_delay = 1.0;
+			ctx.tick_delay = 10.0;
 			ctx.mode = LIBRG_MODE_SERVER;
 			ctx.world_size = zpl_vec3f(FLT_MAX, FLT_MAX, FLT_MAX);
 			ctx.min_branch_size = zpl_vec3f(-1, -1, -1);

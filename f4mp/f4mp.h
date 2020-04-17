@@ -24,6 +24,7 @@ namespace f4mp
 	{
 		friend class Entity;
 		friend class Player;
+		friend class NPC;
 
 	public:
 		static F4MP& GetInstance();
@@ -37,6 +38,8 @@ namespace f4mp
 		librg_entity* FetchEntity(UInt32 id, const std::string& errorMsg = "no entity with ID '%d'!");
 
 		static std::vector<TESForm*> DecodeWornItems(const WornItemsData& wornItems);
+
+		static void SyncTransform(TESObjectREFR* ref, zpl_vec3 position, zpl_vec3 angles, bool ignoreAngleXY = false);
 
 	private:
 		static std::vector<std::unique_ptr<F4MP>> instances;
@@ -59,13 +62,6 @@ namespace f4mp
 
 		std::unordered_map<UInt32, UInt32> entityIDs;
 
-		std::unordered_set<UInt32> myEntities;
-
-		std::unique_ptr<std::unordered_map<UInt32, SyncDataForPapyrus>> _entitySyncDatasFront;
-		std::unique_ptr<std::unordered_map<UInt32, SyncDataForPapyrus>> _entitySyncDatasBack;
-		std::atomic<std::unordered_map<UInt32, SyncDataForPapyrus>*> entitySyncDatasFront;
-		std::atomic<std::unordered_map<UInt32, SyncDataForPapyrus>*> entitySyncDatasBack;
-
 		static void OnConnectRequest(librg_event* event);
 		static void OnConnectAccept(librg_event* event);
 		static void OnConnectRefuse(librg_event* event);
@@ -81,7 +77,6 @@ namespace f4mp
 
 		static void OnHit(librg_message* msg);
 		static void OnFireWeapon(librg_message* msg);
-		static void OnSpawnEntity(librg_message* msg);
 		static void OnSyncEntity(librg_message* msg);
 		
 		static UInt32 GetClientInstanceID(StaticFunctionTag* base);
@@ -95,8 +90,9 @@ namespace f4mp
 		
 		static UInt32 GetPlayerEntityID(StaticFunctionTag* base);
 		static UInt32 GetEntityID(StaticFunctionTag* base, TESObjectREFR* ref);
+		static void SetEntityRef(StaticFunctionTag* base, UInt32 entityID, TESObjectREFR* ref);
+
 		static bool IsEntityValid(StaticFunctionTag* base, UInt32 entityID);
-		static bool IsEntityMine(StaticFunctionTag* base, UInt32 entityID);
 
 		static VMArray<Float32> GetEntityPosition(StaticFunctionTag* base, UInt32 entityID);
 		static void SetEntityPosition(StaticFunctionTag* base, UInt32 entityID, float x, float y, float z);
@@ -118,8 +114,5 @@ namespace f4mp
 
 		static void PlayerHit(StaticFunctionTag* base, UInt32 hitter, UInt32 hittee, Float32 damage);
 		static void PlayerFireWeapon(StaticFunctionTag* base);
-
-		static VMArray<TESObjectREFR*> GetEntitySyncRefs(StaticFunctionTag* base, bool clear);
-		static VMArray<Float32> GetEntitySyncTransforms(StaticFunctionTag* base, bool clear);
 	};
 }

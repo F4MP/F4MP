@@ -3,6 +3,8 @@
 
 void f4mp::Player::OnConnect(Actor* player, TESNPC* playerActorBase)
 {
+	SetRef(player);
+
 	appearance.Fill(playerActorBase);
 	wornItems.Fill(player);
 }
@@ -58,7 +60,7 @@ void f4mp::Player::OnEntityCreate(librg_event* event)
 
 void f4mp::Player::OnEntityUpdate(librg_event* event)
 {
-	Entity::OnEntityUpdate(event);
+	Entity::OnEntityUpdate(event, F4MP::GetInstance().player.get() != this);
 
 	SetNumber("health", librg_data_rf32(event->data));
 

@@ -246,13 +246,13 @@ Event OnTimer(int aiTimerID)
 				initialized = true
 			EndIf
 			
-			float[] position = F4MP.GetEntityPosition(entityID)
-			float angleZ = F4MP.GetEntVarNum(entityID, "angleZ")
-			float distance = Math.Sqrt(Math.Pow(position[0] - x, 2) + Math.Pow(position[1] - y, 2) + Math.Pow(position[2] - z, 2))
+			;float[] position = F4MP.GetEntityPosition(entityID)
+			;float angleZ = F4MP.GetEntVarNum(entityID, "angleZ")
+			;float distance = Math.Sqrt(Math.Pow(position[0] - x, 2) + Math.Pow(position[1] - y, 2) + Math.Pow(position[2] - z, 2))
 
 			;health = F4MP.GetEntVarNum(entityID, "health")
 
-			TranslateTo(position[0], position[1], position[2], 0.0, 0.0, angleZ, distance * 3.0, 500.0)
+			;TranslateTo(position[0], position[1], position[2], 0.0, 0.0, angleZ, distance * 3.0, 500.0)
 			;self.SetPosition(position[0], position[1], position[2])
 			;self.SetAngle(0.0, 0.0, angleZ)
 

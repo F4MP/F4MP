@@ -16,6 +16,9 @@ namespace f4mp
 		static Entity* Create(librg_entity* entity);
 		static Entity* Create(librg_event* event);
 
+		template<class T>
+		static T* Create(librg_entity* entity, T* instance);
+
 		Entity();
 		virtual ~Entity();
 
@@ -43,5 +46,13 @@ namespace f4mp
 	T* Entity::GetAs(U entity)
 	{
 		return dynamic_cast<T*>(Get(entity));
+	}
+	template<class T>
+	inline T* Entity::Create(librg_entity* entity, T* instance)
+	{
+		instance->SetEntityID(entity->id);
+		entity->user_data = instance;
+
+		return instance;
 	}
 }
