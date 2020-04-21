@@ -15,7 +15,9 @@ namespace f4mp
 			Hit = LIBRG_EVENT_LAST + 1u,
 			FireWeapon,
 			SpawnEntity,
-			SyncEntity
+			SyncEntity,
+			SpawnBuilding,
+			RemoveBuilding
 		};
 	};
 
@@ -34,7 +36,7 @@ namespace f4mp
 		f32 damage;
 	};
 
-	struct SpawnData
+	struct SpawnEntityData
 	{
 		u32 formID;
 		zpl_vec3 position;
@@ -44,13 +46,33 @@ namespace f4mp
 		u32 ownerEntityID;
 	};
 
-	struct SyncData
+	struct SyncEntityData
 	{
 		u32 formID;
 		zpl_vec3 position;
 		zpl_vec3 angles;
 
 		f64 syncedTime;
+	};
+
+	struct SpawnBuildingData
+	{
+		u32 ownerEntityID;
+		u32 formID, baseFormID;
+		zpl_vec3 position;
+		zpl_vec3 angles;
+	};
+
+	struct RemoveBuildingData
+	{
+		u32 ownerEntityID;
+		u32 formID;
+	};
+
+	struct TransformData
+	{
+		zpl_vec3 position;
+		zpl_vec3 angles;
 	};
 
 	struct AppearanceData

@@ -87,6 +87,12 @@
     <ClCompile Include="NPC.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
+    <ClCompile Include="..\f4se\PapyrusForm.cpp">
+      <Filter>f4se</Filter>
+    </ClCompile>
+    <ClCompile Include="..\f4se\GameObjects.cpp">
+      <Filter>f4se</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="exports.def">

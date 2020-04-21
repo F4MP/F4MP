@@ -41,6 +41,8 @@ namespace f4mp
 
 		static void SyncTransform(TESObjectREFR* ref, zpl_vec3 position, zpl_vec3 angles, bool ignoreAngleXY = false);
 
+		static void SetTransform(TESObjectREFR* ref, zpl_vec3 position, zpl_vec3 angles);
+
 	private:
 		static std::vector<std::unique_ptr<F4MP>> instances;
 		static size_t activeInstance;
@@ -62,6 +64,10 @@ namespace f4mp
 
 		std::unordered_map<UInt32, UInt32> entityIDs;
 
+		std::unordered_map<UInt32, TransformData> myBuildings;
+		std::unordered_map<UInt64, UInt32> othersBuildings;
+		std::unordered_set<UInt32> knownBuildings;
+
 		static void OnConnectRequest(librg_event* event);
 		static void OnConnectAccept(librg_event* event);
 		static void OnConnectRefuse(librg_event* event);
@@ -78,6 +84,8 @@ namespace f4mp
 		static void OnHit(librg_message* msg);
 		static void OnFireWeapon(librg_message* msg);
 		static void OnSyncEntity(librg_message* msg);
+		static void OnSpawnBuilding(librg_message* msg);
+		static void OnRemoveBuilding(librg_message* msg);
 		
 		static UInt32 GetClientInstanceID(StaticFunctionTag* base);
 		static void SetClient(StaticFunctionTag* base, UInt32 instance);

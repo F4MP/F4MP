@@ -154,8 +154,8 @@ namespace f4mp
 
 		static void OnSpawnEntity(librg_message* msg)
 		{
-			SpawnData data;
-			librg_data_rptr(msg->data, &data, sizeof(SpawnData));
+			SpawnEntityData data;
+			librg_data_rptr(msg->data, &data, sizeof(SpawnEntityData));
 
 			auto entityID = instance->entityIDs.find(data.formID);
 			if (entityID != instance->entityIDs.end())
@@ -180,13 +180,13 @@ namespace f4mp
 
 			instance->entityIDs[data.formID] = data.entityID;
 
-			//librg_message_send_all(msg->ctx, MessageType::SpawnEntity, &data, sizeof(SpawnData));
+			//librg_message_send_all(msg->ctx, MessageType::SpawnEntity, &data, sizeof(SpawnEntityData));
 		}
 
 		static void OnSyncEntity(librg_message* msg)
 		{
-			SyncData data;
-			librg_data_rptr(msg->data, &data, sizeof(SyncData));
+			SyncEntityData data;
+			librg_data_rptr(msg->data, &data, sizeof(SyncEntityData));
 
 			auto syncedTime = instance->entitiesSyncedTime.find(data.formID);
 			if (syncedTime != instance->entitiesSyncedTime.end())
@@ -216,7 +216,27 @@ namespace f4mp
 
 			instance->entitiesSyncedTime[data.formID] = data.syncedTime;
 
-			librg_message_send_except(msg->ctx, MessageType::SyncEntity, msg->peer, &data, sizeof(SyncData));
+			librg_message_send_except(msg->ctx, MessageType::SyncEntity, msg->peer, &data, sizeof(SyncEntityData));
+		}
+
+		static void OnSpawnBuilding(librg_message* msg)
+		{
+			SpawnBuildingData data;
+			librg_data_rptr(msg->data, &data, sizeof(SpawnBuildingData));
+
+			librg_log("building spawned: %x %f %f %f\n", data.formID, data.position.x, data.position.y, data.position.z);
+
+			librg_message_send_except(msg->ctx, MessageType::SpawnBuilding, msg->peer, &data, sizeof(SpawnBuildingData));
+		}
+
+		static void OnRemoveBuilding(librg_message* msg)
+		{
+			RemoveBuildingData data;
+			librg_data_rptr(msg->data, &data, sizeof(RemoveBuildingData));
+
+			librg_log("building removed: %x\n", data.formID);
+
+			librg_message_send_except(msg->ctx, MessageType::RemoveBuilding, msg->peer, &data, sizeof(RemoveBuildingData));
 		}
 
 	public:
@@ -252,6 +272,8 @@ namespace f4mp
 			librg_network_add(&ctx, MessageType::FireWeapon, OnFireWeapon);
 			librg_network_add(&ctx, MessageType::SpawnEntity, OnSpawnEntity);
 			librg_network_add(&ctx, MessageType::SyncEntity, OnSyncEntity);
+			librg_network_add(&ctx, MessageType::SpawnBuilding, OnSpawnBuilding);
+			librg_network_add(&ctx, MessageType::RemoveBuilding, OnRemoveBuilding);
 
 			librg_network_start(&ctx, librg_address{ 7779, const_cast<char*>(address.c_str()) });
 

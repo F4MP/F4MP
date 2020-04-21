@@ -179,6 +179,7 @@ copy "$(ProjectDir)\scripts\F4MPQuest.psc" "D:\SteamLibrary\steamapps\common\Fal
     <ClCompile Include="..\f4se\GameExtraData.cpp" />
     <ClCompile Include="..\f4se\GameFormComponents.cpp" />
     <ClCompile Include="..\f4se\GameForms.cpp" />
+    <ClCompile Include="..\f4se\GameObjects.cpp" />
     <ClCompile Include="..\f4se\GameReferences.cpp" />
     <ClCompile Include="..\f4se\GameRTTI.cpp" />
     <ClCompile Include="..\f4se\GameTypes.cpp" />
@@ -187,6 +188,7 @@ copy "$(ProjectDir)\scripts\F4MPQuest.psc" "D:\SteamLibrary\steamapps\common\Fal
     <ClCompile Include="..\f4se\NiTypes.cpp" />
     <ClCompile Include="..\f4se\PapyrusArgs.cpp" />
     <ClCompile Include="..\f4se\PapyrusEvents.cpp" />
+    <ClCompile Include="..\f4se\PapyrusForm.cpp" />
     <ClCompile Include="..\f4se\PapyrusInterfaces.cpp" />
     <ClCompile Include="..\f4se\PapyrusValue.cpp" />
     <ClCompile Include="..\f4se\PapyrusVM.cpp" />

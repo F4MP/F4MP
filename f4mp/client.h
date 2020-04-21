@@ -18,6 +18,12 @@
 
 namespace f4mp
 {
+	template<class T>
+	T ToDegrees(const T& radians)
+	{
+		return radians * 360.0f / ZPL_TAU;
+	}
+
 	namespace client
 	{
 		struct AppearanceData : public f4mp::AppearanceData

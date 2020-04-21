@@ -115,25 +115,8 @@ Event OnKeyDown(int keyCode)
 		RegisterForExternalEvent("OnPlayerHit", "OnPlayerHit")
 
 		RegisterForKey(113)
-		RegisterForKey(114)
 	ElseIf keyCode == 113
 		F4MP.SetClient(1 - F4MP.GetClientInstanceID())
-	ElseIf keyCode == 114
-	;	Actor randomActor = Game.FindRandomActorFromRef(Game.GetPlayer(), 1000.0)
-	;	If randomActor != None && randomActor != Game.GetPlayer()
-	;		chosenActor = randomActor
-	;		targetRef = Game.GetPlayer().PlaceAtMe(targetForm)
-
-	;		Debug.Notification(chosenActor.GetDisplayName() + " " + targetRef.GetDisplayName())
-	;	EndIf
-
-		ObjectReference[] refs = F4MP.GetRefsInCell(playerRef.GetParentCell())
-		Debug.Notification(refs.length)
-		int i = 0
-		While i < refs.length
-			Debug.Trace(refs[i] + " " + refs[i].GetDisplayName())
-			i += 1
-		EndWhile
 	EndIf
 EndEvent
 

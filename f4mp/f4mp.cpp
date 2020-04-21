@@ -14,6 +14,7 @@
 #include "f4se/NiNodes.h"
 
 #include <fstream>
+#include <iterator>
 #include <shlobj.h>				// CSIDL_MYCODUMENTS
 
 std::vector<std::unique_ptr<f4mp::F4MP>> f4mp::F4MP::instances;
@@ -60,6 +61,8 @@ f4mp::F4MP::F4MP() : ctx{}, port(0), handle(kPluginHandle_Invalid), messaging(nu
 	librg_network_add(&ctx, MessageType::Hit, OnHit);
 	librg_network_add(&ctx, MessageType::FireWeapon, OnFireWeapon);
 	librg_network_add(&ctx, MessageType::SyncEntity, OnSyncEntity);
+	librg_network_add(&ctx, MessageType::SpawnBuilding, OnSpawnBuilding);
+	librg_network_add(&ctx, MessageType::RemoveBuilding, OnRemoveBuilding);
 
 	char	path[MAX_PATH];
 	HRESULT err = SHGetFolderPath(NULL, CSIDL_MYDOCUMENTS | CSIDL_FLAG_CREATE, NULL, SHGFP_TYPE_CURRENT, path);
@@ -313,6 +316,20 @@ void f4mp::F4MP::SyncTransform(TESObjectREFR* ref, zpl_vec3 position, zpl_vec3 a
 	CallFunctionNoWait(ref, "TranslateTo", args);
 }
 
+void f4mp::F4MP::SetTransform(TESObjectREFR* ref, zpl_vec3 position, zpl_vec3 angles)
+{
+	VMVariable x, y, z, angleX, angleY, angleZ, speed, rotSpeed;
+	x.Set<Float32>(&position.x); y.Set<Float32>(&position.y); z.Set<Float32>(&position.z);
+	angleX.Set<Float32>(&angles.x); angleY.Set<Float32>(&angles.y); angleZ.Set<Float32>(&angles.z);
+
+	VMArray<VMVariable> args1, args2;
+	args1.Push(&x); args1.Push(&y); args1.Push(&z);
+	args2.Push(&angleX); args2.Push(&angleY); args2.Push(&angleZ);
+
+	CallFunctionNoWait(ref, "SetPosition", args1);
+	CallFunctionNoWait(ref, "SetAngle", args2);
+}
+
 void f4mp::F4MP::OnConnectRequest(librg_event* event)
 {
 	F4MP& self = GetInstance();
@@ -454,8 +471,8 @@ void f4mp::F4MP::OnSyncEntity(librg_message* msg)
 {
 	F4MP& self = GetInstance();
 
-	SyncData data;
-	librg_data_rptr(msg->data, &data, sizeof(SyncData));
+	SyncEntityData data;
+	librg_data_rptr(msg->data, &data, sizeof(SyncEntityData));
 
 	TESObjectREFR* ref = dynamic_cast<TESObjectREFR*>(LookupFormByID(data.formID));
 	if (ref != nullptr)
@@ -464,16 +481,80 @@ void f4mp::F4MP::OnSyncEntity(librg_message* msg)
 
 		//printf("%x %f\n", data.formID, data.syncedTime);
 
-		VMVariable x, y, z, angleX, angleY, angleZ, speed, rotSpeed;
-		x.Set<Float32>(&data.position.x); y.Set<Float32>(&data.position.y); z.Set<Float32>(&data.position.z);
-		angleX.Set<Float32>(&data.angles.x); angleY.Set<Float32>(&data.angles.y); angleZ.Set<Float32>(&data.angles.z);
+		//VMVariable x, y, z, angleX, angleY, angleZ, speed, rotSpeed;
+		//x.Set<Float32>(&data.position.x); y.Set<Float32>(&data.position.y); z.Set<Float32>(&data.position.z);
+		//angleX.Set<Float32>(&data.angles.x); angleY.Set<Float32>(&data.angles.y); angleZ.Set<Float32>(&data.angles.z);
+		//
+		//VMArray<VMVariable> args1, args2;
+		//args1.Push(&x); args1.Push(&y); args1.Push(&z);
+		//args2.Push(&angleX); args2.Push(&angleY); args2.Push(&angleZ);
+		//
+		//CallFunctionNoWait(ref, "SetPosition", args1);
+		//CallFunctionNoWait(ref, "SetAngle", args2);
 
-		VMArray<VMVariable> args1, args2;
-		args1.Push(&x); args1.Push(&y); args1.Push(&z);
-		args2.Push(&angleX); args2.Push(&angleY); args2.Push(&angleZ);
+		SetTransform(ref, data.position, data.angles);
+	}
+}
 
-		CallFunctionNoWait(ref, "SetPosition", args1);
-		CallFunctionNoWait(ref, "SetAngle", args2);
+void f4mp::F4MP::OnSpawnBuilding(librg_message* msg)
+{
+	F4MP& self = GetInstance();
+
+	SpawnBuildingData data;
+	librg_data_rptr(msg->data, &data, sizeof(SpawnBuildingData));
+
+	UInt64 uniqueID = ((UInt64)data.ownerEntityID << 32) | data.formID;
+
+	auto othersBuilding = self.othersBuildings.find(uniqueID);
+	if (othersBuilding != self.othersBuildings.end())
+	{
+		TESObjectREFR* ref = dynamic_cast<TESObjectREFR*>(LookupFormByID(othersBuilding->second));
+		if (ref)
+		{
+			SetTransform(ref, data.position, data.angles);
+			return;
+		}
+	}
+
+	TESObjectREFR* building = PlaceAtMe_Native((*g_gameVM)->m_virtualMachine, 0, (TESObjectREFR**)g_player.GetPtr(), LookupFormByID(data.baseFormID), 1, true, false, false);
+	SetTransform(building, data.position, data.angles);
+
+	printf("building spawned: %x %f %f %f\n", building->formID, data.position.x, data.position.y, data.position.z);
+
+	self.othersBuildings[uniqueID] = building->formID;
+
+	for (auto& instance : instances)
+	{
+		instance->knownBuildings.insert(building->formID);
+	}
+}
+
+void f4mp::F4MP::OnRemoveBuilding(librg_message* msg)
+{
+	F4MP& self = GetInstance();
+
+	RemoveBuildingData data;
+	librg_data_rptr(msg->data, &data, sizeof(RemoveBuildingData));
+
+	auto building = self.othersBuildings.find(((UInt64)data.ownerEntityID << 32) | data.formID);
+	if (building != self.othersBuildings.end())
+	{
+		TESObjectREFR* ref = dynamic_cast<TESObjectREFR*>(LookupFormByID(building->second));
+		if (ref)
+		{
+			VMArray<VMVariable> args;
+			CallFunctionNoWait(ref, "Delete", args);
+			ref->flags |= TESObjectREFR::kFlag_IsDeleted;
+		}
+
+		printf("building removed: %x %p\n", building->second, ref);
+
+		for (auto& instance : instances)
+		{
+			instance->knownBuildings.erase(building->second);
+		}
+		
+		self.othersBuildings.erase(building);
 	}
 }
 
@@ -564,6 +645,8 @@ void f4mp::F4MP::SyncWorld(StaticFunctionTag* base)
 	auto& refs = player->parentCell->objectList;
 	const NiPoint3& playerPos = player->pos;
 
+	std::unordered_set<UInt32> worldBuildings;
+
 	for (UInt32 i = 0; i < refs.count; i++)
 	{
 		TESObjectREFR* ref = refs[i];
@@ -586,21 +669,109 @@ void f4mp::F4MP::SyncWorld(StaticFunctionTag* base)
 					continue;
 				}
 
-				SpawnData data{ ref->formID, {ref->pos.x, ref->pos.y, ref->pos.z}, {zpl_to_degrees(ref->rot.x), zpl_to_degrees(ref->rot.y), zpl_to_degrees(ref->rot.z)} };
-				librg_message_send_all(&self.ctx, MessageType::SpawnEntity, &data, sizeof(SpawnData));
+				SpawnEntityData data{ ref->formID, {ref->pos.x, ref->pos.y, ref->pos.z}, {zpl_to_degrees(ref->rot.x), zpl_to_degrees(ref->rot.y), zpl_to_degrees(ref->rot.z)} };
+				librg_message_send_all(&self.ctx, MessageType::SpawnEntity, &data, sizeof(SpawnEntityData));
 
 				printf("%s(%x)\n", fullName->name.c_str(), data.formID);
 			}
 		}
 		else
 		{
+			if (ref->baseForm->formType == 36 && (ref->formID & 0xff000000) && !(ref->flags & TESObjectREFR::kFlag_IsDeleted))
+			{
+				// 36 means static objects, right?
+				if (ref->baseForm && ref->baseForm->formType == 36)
+				{
+					worldBuildings.insert(ref->formID);
+				}
+			}
+
 			NiPoint3 dist = playerPos - ref->pos;
 			float distSqr = zpl_vec3_mag2({ dist.x, dist.y, dist.z });
 
 			if (distSqr < syncRadiusSqr)
 			{
-				SyncData data{ ref->formID, {ref->pos.x, ref->pos.y, ref->pos.z}, {zpl_to_degrees(ref->rot.x), zpl_to_degrees(ref->rot.y), zpl_to_degrees(ref->rot.z)}, librg_time_now(&self.ctx) };
-				librg_message_send_all(&self.ctx, MessageType::SyncEntity, &data, sizeof(SyncData));
+				SyncEntityData data{ ref->formID, {ref->pos.x, ref->pos.y, ref->pos.z}, {zpl_to_degrees(ref->rot.x), zpl_to_degrees(ref->rot.y), zpl_to_degrees(ref->rot.z)}, librg_time_now(&self.ctx) };
+				librg_message_send_all(&self.ctx, MessageType::SyncEntity, &data, sizeof(SyncEntityData));
+			}
+		}
+
+		// TODO: optimize to work by events
+
+		std::list<UInt32> newBuildings;
+		std::set_difference(worldBuildings.begin(), worldBuildings.end(), self.knownBuildings.begin(), self.knownBuildings.end(), std::inserter(newBuildings, newBuildings.begin()));
+
+		const float epsilon = 1e-8f;
+
+		if (newBuildings.size() > 0)
+		{
+			for (auto it = newBuildings.begin(); it != newBuildings.end();)
+			{
+				TESObjectREFR* ref = dynamic_cast<TESObjectREFR*>(LookupFormByID(*it));
+				if (!ref || (ref->flags & TESObjectREFR::kFlag_IsDeleted))
+				{
+					it = newBuildings.erase(it);
+					continue;
+				}
+
+				// HACK: find the real solution, not the way around it!
+				if (std::find_if(self.knownBuildings.begin(), self.knownBuildings.end(), [&](UInt32 formID)
+					{
+						TESObjectREFR* known = dynamic_cast<TESObjectREFR*>(LookupFormByID(formID));
+						if (!known)
+						{
+							return false;
+						}
+
+						return zpl_vec3_mag2((zpl_vec3&)known->pos - (zpl_vec3&)ref->pos) < epsilon;
+					}) != self.knownBuildings.end())
+				{
+					it = newBuildings.erase(it);
+					continue;
+				}
+
+				SpawnBuildingData data{ self.player->GetEntityID(), ref->formID, ref->baseForm->formID, (zpl_vec3&)ref->pos, ToDegrees((zpl_vec3&)ref->rot) };
+				librg_message_send_all(&self.ctx, MessageType::SpawnBuilding, &data, sizeof(SpawnBuildingData));
+
+				self.myBuildings[ref->formID] = { (zpl_vec3&)ref->pos, ToDegrees((zpl_vec3&)ref->rot) };
+
+				it++;
+			}
+
+			for (auto& instance : instances)
+			{
+				instance->knownBuildings.insert(newBuildings.begin(), newBuildings.end());
+			}
+		}
+
+		for (auto it = self.myBuildings.begin(); it != self.myBuildings.end();)
+		{
+			UInt32 formID = it->first;
+			TESObjectREFR* ref = dynamic_cast<TESObjectREFR*>(LookupFormByID(formID));
+
+			if (ref)
+			{
+				if (zpl_vec3_mag2((zpl_vec3&)ref->pos - it->second.position) > epsilon || zpl_vec3_mag2(ToDegrees((zpl_vec3&)ref->rot) - it->second.angles) > epsilon)
+				{
+					SpawnBuildingData data{ self.player->GetEntityID(), ref->formID, ref->baseForm->formID, (zpl_vec3&)ref->pos, ToDegrees((zpl_vec3&)ref->rot) };
+					librg_message_send_all(&self.ctx, MessageType::SpawnBuilding, &data, sizeof(SpawnBuildingData));
+
+					it->second.position = (zpl_vec3&)ref->pos;
+					it->second.angles = ToDegrees((zpl_vec3&)ref->rot);
+				}
+				it++;
+			}
+			else
+			{
+				RemoveBuildingData data{ self.player->GetEntityID(), formID };
+				librg_message_send_all(&self.ctx, MessageType::RemoveBuilding, &data, sizeof(RemoveBuildingData));
+
+				for (auto& instance : instances)
+				{
+					instance->knownBuildings.erase(formID);
+				}
+				
+				it = self.myBuildings.erase(it);
 			}
 		}
 	}
