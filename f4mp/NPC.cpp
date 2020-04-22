@@ -20,7 +20,7 @@ void f4mp::NPC::OnEntityCreate(librg_event* event)
 
 	_MESSAGE("OnSpawnEntity: %u(%x)", entityID, formID);
 
-	TESObjectREFR* gameEntity = dynamic_cast<TESObjectREFR*>(LookupFormByID(formID));
+	TESObjectREFR* gameEntity = DYNAMIC_CAST(LookupFormByID(formID), TESForm, TESObjectREFR);
 	if (!gameEntity)
 	{
 		return;
@@ -33,16 +33,10 @@ void f4mp::NPC::OnEntityCreate(librg_event* event)
 
 void f4mp::NPC::OnEntityUpdate(librg_event* event)
 {
-	if (ownerEntityID != F4MP::GetInstance().player->GetEntityID())
-	{
-		Entity::OnEntityUpdate(event);
-	}
+	Entity::OnEntityUpdate(event);
 }
 
 void f4mp::NPC::OnClientUpdate(librg_event* event)
 {
-	if (ownerEntityID == F4MP::GetInstance().player->GetEntityID())
-	{
-		Entity::OnClientUpdate(event);
-	}
+	Entity::OnClientUpdate(event);
 }

@@ -1,6 +1,8 @@
 #include "Player.h"
 #include "f4mp.h"
 
+#include "f4se/NiNodes.h"
+
 void f4mp::Player::OnConnect(Actor* player, TESNPC* playerActorBase)
 {
 	SetRef(player);
@@ -65,6 +67,46 @@ void f4mp::Player::OnEntityUpdate(librg_event* event)
 	SetNumber("health", librg_data_rf32(event->data));
 
 	SetAnimStateID(librg_data_ri32(event->data));
+
+	//bool enableVal = false, pauseVoiceVal = false;
+	//VMVariable enable, pauseVoice;
+	//enable.Set<bool>(&enableVal);
+	//pauseVoice.Set<bool>(&pauseVoiceVal);
+	//
+	//VMArray<VMVariable> args;
+	//args.Push(&enable);
+	//args.Push(&pauseVoice);
+	//
+	//CallFunctionNoWait(dynamic_cast<Actor*>(GetRef()), "EnableAI", args);
+
+	//TESObjectREFR* ref = GetRef();
+	//if (ref)
+	//{
+	//	NiNode* root = ref->GetObjectRootNode();
+	//	if (root)
+	//	{
+	//		static std::unordered_map<std::string, NiTransform> transforms;
+
+	//		root->Visit([&](NiAVObject* obj)
+	//			{
+	//				if (ref == *g_player)
+	//				{
+	//					transforms[obj->m_name.c_str()] = obj->m_localTransform;
+	//				}
+	//				else
+	//				{
+	//					auto transform = transforms.find(obj->m_name.c_str());
+	//					if (transform != transforms.end())
+	//					{
+	//						obj->m_localTransform = transform->second;
+	//					}
+	//				}
+	//				//printf("%s\n", obj->m_name.c_str());
+	//				return false;
+	//			});
+	//		//root->UpdateTransforms();
+	//	}
+	//}
 }
 
 void f4mp::Player::OnEntityRemove(librg_event* event)

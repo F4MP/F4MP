@@ -146,7 +146,7 @@ EndEvent
 
 Event OnTimer(int aiTimerID)
 	If aiTimerID == tickTimerID
-		F4MP.Tick(playerRef)
+		F4MP.Tick()
 		StartTimer(0, tickTimerID)
 	ElseIf aiTimerID == updateTimerID
 		;; ***************************************

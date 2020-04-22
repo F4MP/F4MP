@@ -234,7 +234,7 @@ namespace f4mp
 			RemoveBuildingData data;
 			librg_data_rptr(msg->data, &data, sizeof(RemoveBuildingData));
 
-			librg_log("building removed: %x\n", data.formID);
+			librg_log("building removed: %x\n", data.uniqueFormID);
 
 			librg_message_send_except(msg->ctx, MessageType::RemoveBuilding, msg->peer, &data, sizeof(RemoveBuildingData));
 		}

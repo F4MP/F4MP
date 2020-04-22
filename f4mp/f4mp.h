@@ -41,11 +41,14 @@ namespace f4mp
 
 		static void SyncTransform(TESObjectREFR* ref, zpl_vec3 position, zpl_vec3 angles, bool ignoreAngleXY = false);
 
+		static void TranslateTo(TESObjectREFR* ref, zpl_vec3 position, zpl_vec3 angles, Float32 speed, Float32 rotSpeed);
 		static void SetTransform(TESObjectREFR* ref, zpl_vec3 position, zpl_vec3 angles);
+
+		static UInt64 GetUniqueFormID(UInt32 ownerEntityID, UInt32 formID);
 
 	private:
 		static std::vector<std::unique_ptr<F4MP>> instances;
-		static size_t activeInstance;
+		static size_t activeInstance, nextActiveInstance;
 
 		Config config;
 
@@ -64,10 +67,8 @@ namespace f4mp
 
 		std::unordered_map<UInt32, UInt32> entityIDs;
 
-		std::unordered_map<UInt32, TransformData> myBuildings;
-		std::unordered_map<UInt64, UInt32> othersBuildings;
-		std::unordered_set<UInt32> knownBuildings;
-
+		std::unordered_map<UInt64, TransformData> buildings;
+		
 		static void OnConnectRequest(librg_event* event);
 		static void OnConnectAccept(librg_event* event);
 		static void OnConnectRefuse(librg_event* event);
@@ -93,7 +94,7 @@ namespace f4mp
 		static bool IsConnected(StaticFunctionTag* base);
 		static bool Connect(StaticFunctionTag* base, Actor* player, TESNPC* playerActorBase, BSFixedString address, SInt32 port);
 		static bool Disconnect(StaticFunctionTag* base);
-		static void Tick(StaticFunctionTag* base, Actor* player);
+		static void Tick(StaticFunctionTag* base);
 		static void SyncWorld(StaticFunctionTag* base);
 		
 		static UInt32 GetPlayerEntityID(StaticFunctionTag* base);

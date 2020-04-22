@@ -18,23 +18,14 @@
 #include <shlobj.h>				// CSIDL_MYCODUMENTS
 
 std::vector<std::unique_ptr<f4mp::F4MP>> f4mp::F4MP::instances;
-size_t f4mp::F4MP::activeInstance = 0;
+size_t f4mp::F4MP::activeInstance = 0, f4mp::F4MP::nextActiveInstance = 0;
 
 f4mp::F4MP& f4mp::F4MP::GetInstance()
 {
-	while (instances.size() <= activeInstance)
+	if (instances.size() == 0)
 	{
 		instances.push_back(std::make_unique<F4MP>());
 		instances.back()->player = std::make_unique<Player>();
-
-		if (instances.size() > 1)
-		{
-			F4MP& mainInstance = *instances.front();
-			F4MP& newInstance = *instances.back();
-			newInstance.messaging = mainInstance.messaging;
-			newInstance.papyrus = mainInstance.papyrus;
-			newInstance.task = mainInstance.task;
-		}
 	}
 
 	return *instances[activeInstance];
@@ -134,7 +125,7 @@ bool f4mp::F4MP::Init(const F4SEInterface* f4se)
 			vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, bool>("IsConnected", "F4MP", IsConnected, vm));
 			vm->RegisterFunction(new NativeFunction4<StaticFunctionTag, bool, Actor*, TESNPC*, BSFixedString, SInt32>("Connect", "F4MP", Connect, vm));
 			vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, bool>("Disconnect", "F4MP", Disconnect, vm));
-			vm->RegisterFunction(new NativeFunction1<StaticFunctionTag, void, Actor*>("Tick", "F4MP", Tick, vm));
+			vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("Tick", "F4MP", Tick, vm));
 			vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("SyncWorld", "F4MP", SyncWorld, vm));
 
 			vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, UInt32>("GetPlayerEntityID", "F4MP", GetPlayerEntityID, vm));
@@ -290,6 +281,8 @@ std::vector<TESForm*> f4mp::F4MP::DecodeWornItems(const WornItemsData& wornItems
 
 void f4mp::F4MP::SyncTransform(TESObjectREFR* ref, zpl_vec3 position, zpl_vec3 angles, bool ignoreAngleXY)
 {
+	// HACK: somehow calling F4MP::TranslateTo causes a crash.
+
 	if (!ref)
 	{
 		return;
@@ -300,24 +293,50 @@ void f4mp::F4MP::SyncTransform(TESObjectREFR* ref, zpl_vec3 position, zpl_vec3 a
 		angles.x = angles.y = 0.f;
 	}
 
-	Float32 speedVal = zpl_vec3_mag(position - (zpl_vec3&)ref->pos) * 3.f;
-	Float32 rotSpeedVal = 500.f;
-
-	VMVariable x, y, z, angleX, angleY, angleZ, speed, rotSpeed;
+	VMVariable x, y, z, angleX, angleY, angleZ, speedVar, rotSpeedVar;
 	x.Set<Float32>(&position.x); y.Set<Float32>(&position.y); z.Set<Float32>(&position.z);
 	angleX.Set<Float32>(&angles.x); angleY.Set<Float32>(&angles.y); angleZ.Set<Float32>(&angles.z);
-	speed.Set<Float32>(&speedVal); rotSpeed.Set<Float32>(&rotSpeedVal);
+
+	float speed = zpl_vec3_mag(position - (zpl_vec3&)ref->pos) * 3.f, rotSpeed = 500.f;
+	speedVar.Set<Float32>(&speed); rotSpeedVar.Set<Float32>(&rotSpeed);
 
 	VMArray<VMVariable> args;
 	args.Push(&x); args.Push(&y); args.Push(&z);
 	args.Push(&angleX); args.Push(&angleY); args.Push(&angleZ);
-	args.Push(&speed); args.Push(&rotSpeed);
+	args.Push(&speedVar); args.Push(&rotSpeedVar);
+
+	CallFunctionNoWait(ref, "TranslateTo", args);
+}
+
+void f4mp::F4MP::TranslateTo(TESObjectREFR* ref, zpl_vec3 position, zpl_vec3 angles, Float32 speed, Float32 rotSpeed)
+{
+	if (!ref)
+	{
+		return;
+	}
+
+	VMVariable x, y, z, angleX, angleY, angleZ, speedVar, rotSpeedVar;
+	x.Set<Float32>(&position.x); y.Set<Float32>(&position.y); z.Set<Float32>(&position.z);
+	angleX.Set<Float32>(&angles.x); angleY.Set<Float32>(&angles.y); angleZ.Set<Float32>(&angles.z);
+
+	float _speed = 500.f, _rotSpeed = 500.f;
+	speedVar.Set<Float32>(&_speed); rotSpeedVar.Set<Float32>(&_rotSpeed);
+
+	VMArray<VMVariable> args;
+	args.Push(&x); args.Push(&y); args.Push(&z);
+	args.Push(&angleX); args.Push(&angleY); args.Push(&angleZ);
+	args.Push(&speedVar); args.Push(&rotSpeedVar);
 
 	CallFunctionNoWait(ref, "TranslateTo", args);
 }
 
 void f4mp::F4MP::SetTransform(TESObjectREFR* ref, zpl_vec3 position, zpl_vec3 angles)
 {
+	if (!ref)
+	{
+		return;
+	}
+
 	VMVariable x, y, z, angleX, angleY, angleZ, speed, rotSpeed;
 	x.Set<Float32>(&position.x); y.Set<Float32>(&position.y); z.Set<Float32>(&position.z);
 	angleX.Set<Float32>(&angles.x); angleY.Set<Float32>(&angles.y); angleZ.Set<Float32>(&angles.z);
@@ -328,6 +347,11 @@ void f4mp::F4MP::SetTransform(TESObjectREFR* ref, zpl_vec3 position, zpl_vec3 an
 
 	CallFunctionNoWait(ref, "SetPosition", args1);
 	CallFunctionNoWait(ref, "SetAngle", args2);
+}
+
+UInt64 f4mp::F4MP::GetUniqueFormID(UInt32 ownerEntityID, UInt32 entityFormID)
+{
+	return ((UInt64)ownerEntityID << 32) | entityFormID;
 }
 
 void f4mp::F4MP::OnConnectRequest(librg_event* event)
@@ -474,24 +498,9 @@ void f4mp::F4MP::OnSyncEntity(librg_message* msg)
 	SyncEntityData data;
 	librg_data_rptr(msg->data, &data, sizeof(SyncEntityData));
 
-	TESObjectREFR* ref = dynamic_cast<TESObjectREFR*>(LookupFormByID(data.formID));
+	TESObjectREFR* ref = DYNAMIC_CAST(LookupFormByID(data.formID), TESForm, TESObjectREFR);
 	if (ref != nullptr)
 	{
-		//SyncTransform(ref, data.position, data.angles);
-
-		//printf("%x %f\n", data.formID, data.syncedTime);
-
-		//VMVariable x, y, z, angleX, angleY, angleZ, speed, rotSpeed;
-		//x.Set<Float32>(&data.position.x); y.Set<Float32>(&data.position.y); z.Set<Float32>(&data.position.z);
-		//angleX.Set<Float32>(&data.angles.x); angleY.Set<Float32>(&data.angles.y); angleZ.Set<Float32>(&data.angles.z);
-		//
-		//VMArray<VMVariable> args1, args2;
-		//args1.Push(&x); args1.Push(&y); args1.Push(&z);
-		//args2.Push(&angleX); args2.Push(&angleY); args2.Push(&angleZ);
-		//
-		//CallFunctionNoWait(ref, "SetPosition", args1);
-		//CallFunctionNoWait(ref, "SetAngle", args2);
-
 		SetTransform(ref, data.position, data.angles);
 	}
 }
@@ -503,15 +512,15 @@ void f4mp::F4MP::OnSpawnBuilding(librg_message* msg)
 	SpawnBuildingData data;
 	librg_data_rptr(msg->data, &data, sizeof(SpawnBuildingData));
 
-	UInt64 uniqueID = ((UInt64)data.ownerEntityID << 32) | data.formID;
+	UInt64 uniqueID = GetUniqueFormID(data.ownerEntityID, data.formID);
 
-	auto othersBuilding = self.othersBuildings.find(uniqueID);
-	if (othersBuilding != self.othersBuildings.end())
+	auto othersBuilding = self.buildings.find(uniqueID);
+	if (othersBuilding != self.buildings.end())
 	{
-		TESObjectREFR* ref = dynamic_cast<TESObjectREFR*>(LookupFormByID(othersBuilding->second));
+		TESObjectREFR* ref = DYNAMIC_CAST(LookupFormByID(othersBuilding->second.formID), TESForm, TESObjectREFR);
 		if (ref)
 		{
-			SetTransform(ref, data.position, data.angles);
+			TranslateTo(ref, data.position, data.angles, 500.f, 500.f);
 			return;
 		}
 	}
@@ -521,11 +530,9 @@ void f4mp::F4MP::OnSpawnBuilding(librg_message* msg)
 
 	printf("building spawned: %x %f %f %f\n", building->formID, data.position.x, data.position.y, data.position.z);
 
-	self.othersBuildings[uniqueID] = building->formID;
-
 	for (auto& instance : instances)
 	{
-		instance->knownBuildings.insert(building->formID);
+		instance->buildings[uniqueID] = { building->formID, data.position, data.angles };
 	}
 }
 
@@ -536,10 +543,10 @@ void f4mp::F4MP::OnRemoveBuilding(librg_message* msg)
 	RemoveBuildingData data;
 	librg_data_rptr(msg->data, &data, sizeof(RemoveBuildingData));
 
-	auto building = self.othersBuildings.find(((UInt64)data.ownerEntityID << 32) | data.formID);
-	if (building != self.othersBuildings.end())
+	auto building = self.buildings.find(data.uniqueFormID);
+	if (building != self.buildings.end())
 	{
-		TESObjectREFR* ref = dynamic_cast<TESObjectREFR*>(LookupFormByID(building->second));
+		TESObjectREFR* ref = DYNAMIC_CAST(LookupFormByID(building->second.formID), TESForm, TESObjectREFR);
 		if (ref)
 		{
 			VMArray<VMVariable> args;
@@ -547,14 +554,12 @@ void f4mp::F4MP::OnRemoveBuilding(librg_message* msg)
 			ref->flags |= TESObjectREFR::kFlag_IsDeleted;
 		}
 
-		printf("building removed: %x %p\n", building->second, ref);
+		printf("building removed: %x %p\n", building->second.formID, ref);
 
 		for (auto& instance : instances)
 		{
-			instance->knownBuildings.erase(building->second);
+			instance->buildings.erase(building->first);
 		}
-		
-		self.othersBuildings.erase(building);
 	}
 }
 
@@ -565,7 +570,7 @@ UInt32 f4mp::F4MP::GetClientInstanceID(StaticFunctionTag* base)
 
 void f4mp::F4MP::SetClient(StaticFunctionTag* base, UInt32 instance)
 {
-	activeInstance = instance;
+	nextActiveInstance = instance;
 }
 
 bool f4mp::F4MP::IsConnected(StaticFunctionTag* base)
@@ -602,7 +607,7 @@ bool f4mp::F4MP::Disconnect(StaticFunctionTag* base)
 	return true;
 }
 
-void f4mp::F4MP::Tick(StaticFunctionTag* base, Actor* player)
+void f4mp::F4MP::Tick(StaticFunctionTag* base)
 {
 	//F4MP& self = GetInstance();
 	//librg_tick(&self.ctx);
@@ -613,20 +618,23 @@ void f4mp::F4MP::Tick(StaticFunctionTag* base, Actor* player)
 		if (librg_is_connected(&instance->ctx))
 		{
 			SyncWorld(base);
-
-			librg_entity* playerEntity = instance->FetchEntity(instance->player->GetEntityID());
-			if (playerEntity)
-			{
-				playerEntity->position = { player->pos.x, player->pos.y, player->pos.z };
-				
-				Player* client = Entity::GetAs<Player>(playerEntity);
-				client->SetNumber("angleX", zpl_to_degrees(player->rot.x));
-				client->SetNumber("angleY", zpl_to_degrees(player->rot.y));
-				client->SetNumber("angleZ", zpl_to_degrees(player->rot.z));
-			}
 		}
 
 		librg_tick(&instance->ctx);
+	}
+
+	activeInstance = nextActiveInstance;
+
+	while (instances.size() <= activeInstance)
+	{
+		instances.push_back(std::make_unique<F4MP>());
+		instances.back()->player = std::make_unique<Player>();
+
+		F4MP& mainInstance = *instances.front();
+		F4MP& newInstance = *instances.back();
+		newInstance.messaging = mainInstance.messaging;
+		newInstance.papyrus = mainInstance.papyrus;
+		newInstance.task = mainInstance.task;
 	}
 }
 
@@ -645,12 +653,13 @@ void f4mp::F4MP::SyncWorld(StaticFunctionTag* base)
 	auto& refs = player->parentCell->objectList;
 	const NiPoint3& playerPos = player->pos;
 
-	std::unordered_set<UInt32> worldBuildings;
-
+	std::vector<UInt32> worldBuildings, knownBuildings;
+	
 	for (UInt32 i = 0; i < refs.count; i++)
 	{
 		TESObjectREFR* ref = refs[i];
-		bool isActor = dynamic_cast<Actor*>(ref) != nullptr;
+		Actor* actor = DYNAMIC_CAST(ref, TESForm, Actor);
+		bool isActor = actor != nullptr;
 
 		if (isActor)
 		{
@@ -663,13 +672,13 @@ void f4mp::F4MP::SyncWorld(StaticFunctionTag* base)
 			{
 				self.entityIDs[ref->formID] = (UInt32)-1;
 
-				TESFullName* fullName = dynamic_cast<TESFullName*>(ref->baseForm);
+				TESFullName* fullName = DYNAMIC_CAST(ref->baseForm, TESForm, TESFullName);
 				if (fullName == nullptr || strstr(fullName->name.c_str(), "F4MP") != nullptr)
 				{
 					continue;
 				}
 
-				SpawnEntityData data{ ref->formID, {ref->pos.x, ref->pos.y, ref->pos.z}, {zpl_to_degrees(ref->rot.x), zpl_to_degrees(ref->rot.y), zpl_to_degrees(ref->rot.z)} };
+				SpawnEntityData data{ ref->formID, (zpl_vec3&)ref->pos, ToDegrees((zpl_vec3&)ref->rot) };
 				librg_message_send_all(&self.ctx, MessageType::SpawnEntity, &data, sizeof(SpawnEntityData));
 
 				printf("%s(%x)\n", fullName->name.c_str(), data.formID);
@@ -682,7 +691,7 @@ void f4mp::F4MP::SyncWorld(StaticFunctionTag* base)
 				// 36 means static objects, right?
 				if (ref->baseForm && ref->baseForm->formType == 36)
 				{
-					worldBuildings.insert(ref->formID);
+					worldBuildings.push_back(ref->formID);
 				}
 			}
 
@@ -691,15 +700,22 @@ void f4mp::F4MP::SyncWorld(StaticFunctionTag* base)
 
 			if (distSqr < syncRadiusSqr)
 			{
-				SyncEntityData data{ ref->formID, {ref->pos.x, ref->pos.y, ref->pos.z}, {zpl_to_degrees(ref->rot.x), zpl_to_degrees(ref->rot.y), zpl_to_degrees(ref->rot.z)}, librg_time_now(&self.ctx) };
+				SyncEntityData data{ ref->formID, (zpl_vec3&)ref->pos, ToDegrees((zpl_vec3&)ref->rot), librg_time_now(&self.ctx) };
 				librg_message_send_all(&self.ctx, MessageType::SyncEntity, &data, sizeof(SyncEntityData));
 			}
+		}
+
+		knownBuildings.reserve(self.buildings.size());
+
+		for (auto& knownBuilding : self.buildings)
+		{
+			knownBuildings.push_back(knownBuilding.second.formID);
 		}
 
 		// TODO: optimize to work by events
 
 		std::list<UInt32> newBuildings;
-		std::set_difference(worldBuildings.begin(), worldBuildings.end(), self.knownBuildings.begin(), self.knownBuildings.end(), std::inserter(newBuildings, newBuildings.begin()));
+		std::set_difference(worldBuildings.begin(), worldBuildings.end(), knownBuildings.begin(), knownBuildings.end(), std::inserter(newBuildings, newBuildings.begin()));
 
 		const float epsilon = 1e-8f;
 
@@ -707,7 +723,7 @@ void f4mp::F4MP::SyncWorld(StaticFunctionTag* base)
 		{
 			for (auto it = newBuildings.begin(); it != newBuildings.end();)
 			{
-				TESObjectREFR* ref = dynamic_cast<TESObjectREFR*>(LookupFormByID(*it));
+				TESObjectREFR* ref = DYNAMIC_CAST(LookupFormByID(*it), TESForm, TESObjectREFR);
 				if (!ref || (ref->flags & TESObjectREFR::kFlag_IsDeleted))
 				{
 					it = newBuildings.erase(it);
@@ -715,16 +731,16 @@ void f4mp::F4MP::SyncWorld(StaticFunctionTag* base)
 				}
 
 				// HACK: find the real solution, not the way around it!
-				if (std::find_if(self.knownBuildings.begin(), self.knownBuildings.end(), [&](UInt32 formID)
+				if (std::find_if(self.buildings.begin(), self.buildings.end(), [&](const std::pair<UInt64, TransformData>& building)
 					{
-						TESObjectREFR* known = dynamic_cast<TESObjectREFR*>(LookupFormByID(formID));
+						TESObjectREFR* known = DYNAMIC_CAST(LookupFormByID(building.second.formID), TESForm, TESObjectREFR);
 						if (!known)
 						{
 							return false;
 						}
 
 						return zpl_vec3_mag2((zpl_vec3&)known->pos - (zpl_vec3&)ref->pos) < epsilon;
-					}) != self.knownBuildings.end())
+					}) != self.buildings.end())
 				{
 					it = newBuildings.erase(it);
 					continue;
@@ -733,21 +749,19 @@ void f4mp::F4MP::SyncWorld(StaticFunctionTag* base)
 				SpawnBuildingData data{ self.player->GetEntityID(), ref->formID, ref->baseForm->formID, (zpl_vec3&)ref->pos, ToDegrees((zpl_vec3&)ref->rot) };
 				librg_message_send_all(&self.ctx, MessageType::SpawnBuilding, &data, sizeof(SpawnBuildingData));
 
-				self.myBuildings[ref->formID] = { (zpl_vec3&)ref->pos, ToDegrees((zpl_vec3&)ref->rot) };
+				for (auto& instance : instances)
+				{
+					instance->buildings[GetUniqueFormID(data.ownerEntityID, data.formID)] = { data.formID, data.position, data.angles };
+				}
 
 				it++;
 			}
-
-			for (auto& instance : instances)
-			{
-				instance->knownBuildings.insert(newBuildings.begin(), newBuildings.end());
-			}
 		}
 
-		for (auto it = self.myBuildings.begin(); it != self.myBuildings.end();)
+		for (auto it = self.buildings.begin(); it != self.buildings.end();)
 		{
-			UInt32 formID = it->first;
-			TESObjectREFR* ref = dynamic_cast<TESObjectREFR*>(LookupFormByID(formID));
+			UInt64 uniqueID = it->first;
+			TESObjectREFR* ref = DYNAMIC_CAST(LookupFormByID(it->second.formID), TESForm, TESObjectREFR);
 
 			if (ref)
 			{
@@ -756,22 +770,22 @@ void f4mp::F4MP::SyncWorld(StaticFunctionTag* base)
 					SpawnBuildingData data{ self.player->GetEntityID(), ref->formID, ref->baseForm->formID, (zpl_vec3&)ref->pos, ToDegrees((zpl_vec3&)ref->rot) };
 					librg_message_send_all(&self.ctx, MessageType::SpawnBuilding, &data, sizeof(SpawnBuildingData));
 
-					it->second.position = (zpl_vec3&)ref->pos;
-					it->second.angles = ToDegrees((zpl_vec3&)ref->rot);
+					it->second.position = data.position;
+					it->second.angles = data.angles;
 				}
 				it++;
 			}
 			else
 			{
-				RemoveBuildingData data{ self.player->GetEntityID(), formID };
+				RemoveBuildingData data{ uniqueID };
 				librg_message_send_all(&self.ctx, MessageType::RemoveBuilding, &data, sizeof(RemoveBuildingData));
+
+				it = self.buildings.erase(it);
 
 				for (auto& instance : instances)
 				{
-					instance->knownBuildings.erase(formID);
+					instance->buildings.erase(uniqueID);
 				}
-				
-				it = self.myBuildings.erase(it);
 			}
 		}
 	}

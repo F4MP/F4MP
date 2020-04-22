@@ -6,7 +6,7 @@ Function SetClient(int instanceID) global native
 bool Function IsConnected() global native
 bool Function Connect(Actor player, ActorBase playerActorBase, string address, int port) global native
 bool Function Disconnect() global native
-Function Tick(Actor player) global native
+Function Tick() global native
 Function SyncWorld() global native
 
 int Function GetPlayerEntityID() global native

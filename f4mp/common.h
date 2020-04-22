@@ -65,12 +65,12 @@ namespace f4mp
 
 	struct RemoveBuildingData
 	{
-		u32 ownerEntityID;
-		u32 formID;
+		u64 uniqueFormID;
 	};
 
 	struct TransformData
 	{
+		u32 formID;
 		zpl_vec3 position;
 		zpl_vec3 angles;
 	};

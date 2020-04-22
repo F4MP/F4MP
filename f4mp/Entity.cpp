@@ -85,6 +85,15 @@ void f4mp::Entity::OnEntityRemove(librg_event* event)
 
 void f4mp::Entity::OnClientUpdate(librg_event* event)
 {
+	if (ref)
+	{
+		entity->position = (zpl_vec3&)ref->pos;
+
+		SetNumber("angleX", ToDegrees(ref->rot.x));
+		SetNumber("angleY", ToDegrees(ref->rot.y));
+		SetNumber("angleZ", ToDegrees(ref->rot.z));
+	}
+
 	librg_data_wf32(event->data, GetNumber("angleX"));
 	librg_data_wf32(event->data, GetNumber("angleY"));
 	librg_data_wf32(event->data, GetNumber("angleZ"));
