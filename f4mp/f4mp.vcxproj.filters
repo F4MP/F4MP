@@ -93,6 +93,9 @@
     <ClCompile Include="..\f4se\GameObjects.cpp">
       <Filter>f4se</Filter>
     </ClCompile>
+    <ClCompile Include="common.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="exports.def">

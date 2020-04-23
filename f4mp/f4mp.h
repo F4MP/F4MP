@@ -44,8 +44,6 @@ namespace f4mp
 		static void TranslateTo(TESObjectREFR* ref, zpl_vec3 position, zpl_vec3 angles, Float32 speed, Float32 rotSpeed);
 		static void SetTransform(TESObjectREFR* ref, zpl_vec3 position, zpl_vec3 angles);
 
-		static UInt64 GetUniqueFormID(UInt32 ownerEntityID, UInt32 formID);
-
 	private:
 		static std::vector<std::unique_ptr<F4MP>> instances;
 		static size_t activeInstance, nextActiveInstance;
@@ -68,6 +66,7 @@ namespace f4mp
 		std::unordered_map<UInt32, UInt32> entityIDs;
 
 		std::unordered_map<UInt64, TransformData> buildings;
+		std::unordered_set<UInt32> knownBuildings;
 		
 		static void OnConnectRequest(librg_event* event);
 		static void OnConnectAccept(librg_event* event);

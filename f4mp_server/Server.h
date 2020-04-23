@@ -224,7 +224,7 @@ namespace f4mp
 			SpawnBuildingData data;
 			librg_data_rptr(msg->data, &data, sizeof(SpawnBuildingData));
 
-			librg_log("building spawned: %x %f %f %f\n", data.formID, data.position.x, data.position.y, data.position.z);
+			librg_log("building spawned: %llx %f %f %f\n", GetUniqueFormID(data.ownerEntityID, data.formID), data.position.x, data.position.y, data.position.z);
 
 			librg_message_send_except(msg->ctx, MessageType::SpawnBuilding, msg->peer, &data, sizeof(SpawnBuildingData));
 		}
@@ -234,7 +234,7 @@ namespace f4mp
 			RemoveBuildingData data;
 			librg_data_rptr(msg->data, &data, sizeof(RemoveBuildingData));
 
-			librg_log("building removed: %x\n", data.uniqueFormID);
+			librg_log("building removed: %llx\n", data.uniqueFormID);
 
 			librg_message_send_except(msg->ctx, MessageType::RemoveBuilding, msg->peer, &data, sizeof(RemoveBuildingData));
 		}

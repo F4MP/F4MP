@@ -58,7 +58,8 @@ namespace f4mp
 	struct SpawnBuildingData
 	{
 		u32 ownerEntityID;
-		u32 formID, baseFormID;
+		u32 formID;
+		u32 baseFormID; // HACK: 0 if it's just a transform update
 		zpl_vec3 position;
 		zpl_vec3 angles;
 	};
@@ -292,4 +293,6 @@ namespace f4mp
 
 		return lower;
 	}
+
+	u64 GetUniqueFormID(u32 ownerEntityID, u32 entityFormID);
 }
