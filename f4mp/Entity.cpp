@@ -99,6 +99,10 @@ void f4mp::Entity::OnClientUpdate(librg_event* event)
 	librg_data_wf32(event->data, GetNumber("angleZ"));
 }
 
+void f4mp::Entity::OnTick()
+{
+}
+
 librg_entity* f4mp::Entity::GetNetworkEntity()
 {
 	return entity;

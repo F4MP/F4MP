@@ -42,7 +42,7 @@ namespace f4mp
 		static void SyncTransform(TESObjectREFR* ref, zpl_vec3 position, zpl_vec3 angles, bool ignoreAngleXY = false);
 
 		static void TranslateTo(TESObjectREFR* ref, zpl_vec3 position, zpl_vec3 angles, Float32 speed, Float32 rotSpeed);
-		static void SetTransform(TESObjectREFR* ref, zpl_vec3 position, zpl_vec3 angles);
+		static void MoveTo(TESObjectREFR* ref, zpl_vec3 position, zpl_vec3 angles);
 
 	private:
 		static std::vector<std::unique_ptr<F4MP>> instances;
@@ -60,6 +60,7 @@ namespace f4mp
 		F4SEMessagingInterface* messaging;
 		F4SEPapyrusInterface* papyrus;
 		F4SETaskInterface* task;
+		F4SEObjectInterface* object;
 
 		std::unique_ptr<Player> player;
 

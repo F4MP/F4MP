@@ -32,6 +32,8 @@ namespace f4mp
 
 		virtual void OnClientUpdate(librg_event* event);
 
+		virtual void OnTick();
+
 		librg_entity* GetNetworkEntity();
 		TESObjectREFR* GetRef();
 		void SetRef(TESObjectREFR* ref);

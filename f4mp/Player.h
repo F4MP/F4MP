@@ -24,6 +24,10 @@ namespace f4mp
 		// NOTE: in that case, fix the ~EntVar~ functions to also work with the Entity class.
 		std::unordered_map<std::string, SInt32> integers;
 
+		std::unordered_map<std::string, NiTransform> prevTransforms;
+		std::unordered_map<std::string, NiTransform> curTransforms;
+		float prevTransformTime, curTransformTime, transformDeltaTime, transformDeltaTimeInertia;
+
 	public:
 		static int GetWalkDir(const zpl_vec2& displacement, float lookAngle);
 		
@@ -42,6 +46,8 @@ namespace f4mp
 		void OnEntityRemove(librg_event* event) override;
 
 		void OnClientUpdate(librg_event* event) override;
+
+		void OnTick() override;
 
 		SInt32 GetInteger(const std::string& name) const;
 		void SetInteger(const std::string& name, SInt32 integer);

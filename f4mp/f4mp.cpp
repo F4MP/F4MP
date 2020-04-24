@@ -12,6 +12,7 @@
 
 #include "f4mp.h"
 #include "f4se/NiNodes.h"
+#include "f4se/PapyrusDelayFunctors.h"
 
 #include <fstream>
 #include <iterator>
@@ -94,6 +95,7 @@ bool f4mp::F4MP::Init(const F4SEInterface* f4se)
 	messaging = (F4SEMessagingInterface*)f4se->QueryInterface(kInterface_Messaging);
 	papyrus = (F4SEPapyrusInterface*)f4se->QueryInterface(kInterface_Papyrus);
 	task = (F4SETaskInterface*)f4se->QueryInterface(kInterface_Task);
+	object = (F4SEObjectInterface*)f4se->QueryInterface(kInterface_Object);
 
 	/*messaging->RegisterListener(handle, "F4SE", [](F4SEMessagingInterface::Message* msg)
 	{
@@ -330,7 +332,7 @@ void f4mp::F4MP::TranslateTo(TESObjectREFR* ref, zpl_vec3 position, zpl_vec3 ang
 	CallFunctionNoWait(ref, "TranslateTo", args);
 }
 
-void f4mp::F4MP::SetTransform(TESObjectREFR* ref, zpl_vec3 position, zpl_vec3 angles)
+void f4mp::F4MP::MoveTo(TESObjectREFR* ref, zpl_vec3 position, zpl_vec3 angles)
 {
 	if (!ref)
 	{
@@ -496,7 +498,7 @@ void f4mp::F4MP::OnSyncEntity(librg_message* msg)
 	TESObjectREFR* ref = DYNAMIC_CAST(LookupFormByID(data.formID), TESForm, TESObjectREFR);
 	if (ref != nullptr)
 	{
-		SetTransform(ref, data.position, data.angles);
+		MoveTo(ref, data.position, data.angles);
 	}
 }
 
@@ -506,11 +508,6 @@ void f4mp::F4MP::OnSpawnBuilding(librg_message* msg)
 
 	SpawnBuildingData data;
 	librg_data_rptr(msg->data, &data, sizeof(SpawnBuildingData));
-
-	if (data.baseFormID == 0)
-	{
-		return;
-	}
 
 	UInt64 uniqueID = GetUniqueFormID(data.ownerEntityID, data.formID);
 
@@ -525,8 +522,13 @@ void f4mp::F4MP::OnSpawnBuilding(librg_message* msg)
 		}
 	}
 
+	if (data.baseFormID == 0)
+	{
+		return;
+	}
+
 	TESObjectREFR* building = PlaceAtMe_Native((*g_gameVM)->m_virtualMachine, 0, (TESObjectREFR**)g_player.GetPtr(), LookupFormByID(data.baseFormID), 1, true, false, false);
-	SetTransform(building, data.position, data.angles);
+	MoveTo(building, data.position, data.angles);
 
 	printf("building spawned: %llx %f %f %f\n", uniqueID, data.position.x, data.position.y, data.position.z);
 
@@ -611,6 +613,65 @@ bool f4mp::F4MP::Disconnect(StaticFunctionTag* base)
 
 void f4mp::F4MP::Tick(StaticFunctionTag* base)
 {
+	static bool init = true;
+	if (init)
+	{
+		struct AnimationTick : public IF4SEDelayFunctor
+		{
+			AnimationTick()
+			{
+
+			}
+
+			const char* ClassName() const override
+			{
+				return "AnimationTick";
+			}
+
+			UInt32 ClassVersion() const override
+			{
+				return 1;
+			}
+
+			bool Save(const F4SESerializationInterface* intfc) override
+			{
+				return true;
+			}
+
+			bool Load(const F4SESerializationInterface* intfc, UInt32 version) override
+			{
+				return true;
+			}
+
+			bool Run(VMValue& resultOut) override
+			{
+				F4MP& f4mp = F4MP::GetInstance();
+
+				librg_entity_iterate(&f4mp.ctx, LIBRG_ENTITY_ALIVE, [](librg_ctx* ctx, librg_entity* entity)
+					{
+						Entity::Get(entity)->OnTick();
+					});
+
+				return true;
+			}
+
+			bool ShouldReschedule(SInt32& delayMSOut) override
+			{
+				delayMSOut = 1;
+				return true;
+			}
+
+			bool ShouldResumeStack(UInt32& stackIdOut) override
+			{
+				return false;
+			}
+		};
+
+		GetInstance().object->GetDelayFunctorManager().Enqueue(new AnimationTick());
+
+		init = false;
+	}
+
 	//F4MP& self = GetInstance();
 	//librg_tick(&self.ctx);
 

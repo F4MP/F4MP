@@ -69,6 +69,9 @@ void f4mp::Player::OnEntityUpdate(librg_event* event)
     librg_data_wf32(event->data, health);
 
     librg_data_wi32(event->data, animState);
+
+    Utils::Write(event->data, nodeNames);
+    Utils::Write(event->data, nodeTransforms);
 }
 
 void f4mp::Player::OnClientUpdate(librg_event* event)
@@ -78,4 +81,7 @@ void f4mp::Player::OnClientUpdate(librg_event* event)
     health = librg_data_rf32(event->data);
 
     animState = librg_data_ri32(event->data);
+
+    Utils::Read(event->data, nodeNames);
+    Utils::Read(event->data, nodeTransforms);
 }

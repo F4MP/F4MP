@@ -19,6 +19,9 @@ namespace f4mp
 		const WornItemsData& GetWornItems() const;
 
 	private:
+		std::vector<std::string> nodeNames;
+		std::vector<float> nodeTransforms;
+
 		float health;
 
 		int animState;
