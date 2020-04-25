@@ -1,10 +1,10 @@
 #pragma once
 
-#include "Entity.h"
+#include "Character.h"
 
 namespace f4mp
 {
-	class NPC : public Entity
+	class NPC : public Character
 	{
 	public:
 		NPC(u32 formID = 0, u32 ownerEntityID = (u32)-1);

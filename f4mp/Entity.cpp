@@ -3,6 +3,8 @@
 #include "NPC.h"
 #include "f4mp.h"
 
+#include "f4se/NiNodes.h"
+
 f4mp::Entity* f4mp::Entity::Get(librg_event* event)
 {
 	return Get(event->entity);
@@ -103,6 +105,11 @@ void f4mp::Entity::OnTick()
 {
 }
 
+const librg_entity* f4mp::Entity::GetNetworkEntity() const
+{
+	return entity;
+}
+
 librg_entity* f4mp::Entity::GetNetworkEntity()
 {
 	return entity;
@@ -116,6 +123,20 @@ TESObjectREFR* f4mp::Entity::GetRef()
 void f4mp::Entity::SetRef(TESObjectREFR* ref)
 {
 	this->ref = ref;
+
+	/*NiNode* root = ref->GetActorRootNode(false);
+	if (root)
+	{
+		printf("-----------\n");
+
+		root->Visit([&](NiAVObject* obj)
+			{
+				printf("%s\n", obj->m_name.c_str());
+				return false;
+			});
+
+		printf("-----------\n");
+	}*/
 }
 
 Float32 f4mp::Entity::GetNumber(const std::string& name) const

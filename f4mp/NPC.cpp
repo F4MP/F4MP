@@ -7,7 +7,7 @@ f4mp::NPC::NPC() : formID(0), ownerEntityID((UInt32)-1)
 
 void f4mp::NPC::OnEntityCreate(librg_event* event)
 {
-	Entity::OnEntityCreate(event);
+	Character::OnEntityCreate(event);
 
 	UInt32 entityID = GetNetworkEntity()->id;
 
@@ -33,10 +33,10 @@ void f4mp::NPC::OnEntityCreate(librg_event* event)
 
 void f4mp::NPC::OnEntityUpdate(librg_event* event)
 {
-	Entity::OnEntityUpdate(event);
+	Character::OnEntityUpdate(event);
 }
 
 void f4mp::NPC::OnClientUpdate(librg_event* event)
 {
-	Entity::OnClientUpdate(event);
+	Character::OnClientUpdate(event);
 }

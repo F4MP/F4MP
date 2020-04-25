@@ -23,6 +23,7 @@ namespace f4mp
 	class F4MP
 	{
 		friend class Entity;
+		friend class Character;
 		friend class Player;
 		friend class NPC;
 

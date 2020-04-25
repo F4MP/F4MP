@@ -726,6 +726,9 @@ void f4mp::F4MP::SyncWorld(StaticFunctionTag* base)
 
 		if ((ref->formID & 0xff000000) == 0xff000000)
 		{
+			// TODO: ignoring settlement building sync for the moment.
+			continue;
+
 			if (ref->baseForm->formType == 36 && !(ref->flags & TESObjectREFR::kFlag_IsDeleted))
 			{
 				// 36 means static objects, right?

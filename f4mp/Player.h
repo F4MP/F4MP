@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Entity.h"
+#include "Character.h"
 
 #include "Animation.h"
 
@@ -8,11 +8,9 @@
 
 namespace f4mp
 {
-	class Player : public Entity
+	class Player : public Character
 	{
 	private:
-		std::unique_ptr<Animation> animation;
-
 		UInt32 entityID;
 
 		zpl_vec3 prevPosition;
@@ -23,10 +21,6 @@ namespace f4mp
 		// TODO: might wanna move them to the Entity class.
 		// NOTE: in that case, fix the ~EntVar~ functions to also work with the Entity class.
 		std::unordered_map<std::string, SInt32> integers;
-
-		std::unordered_map<std::string, NiTransform> prevTransforms;
-		std::unordered_map<std::string, NiTransform> curTransforms;
-		float prevTransformTime, curTransformTime, transformDeltaTime, transformDeltaTimeInertia;
 
 	public:
 		static int GetWalkDir(const zpl_vec2& displacement, float lookAngle);

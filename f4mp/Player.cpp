@@ -13,7 +13,7 @@ void f4mp::Player::OnConnect(Actor* player, TESNPC* playerActorBase)
 
 void f4mp::Player::OnEntityCreate(librg_event* event)
 {
-	Entity::OnEntityCreate(event);
+	Character::OnEntityCreate(event);
 
 	Utils::Read(event->data, appearance.female);
 	Utils::Read(event->data, appearance.weights);
@@ -62,74 +62,23 @@ void f4mp::Player::OnEntityCreate(librg_event* event)
 
 void f4mp::Player::OnEntityUpdate(librg_event* event)
 {
-	Entity::OnEntityUpdate(event, F4MP::GetInstance().player.get() != this);
+	Character::OnEntityUpdate(event);
 
 	SetNumber("health", librg_data_rf32(event->data));
 
 	SetAnimStateID(librg_data_ri32(event->data));
 
-	std::vector<std::string> names;
-	std::vector<float> transforms;
-
-	Utils::Read(event->data, names);
-	Utils::Read(event->data, transforms);
-
-	for (size_t i = 0; i < names.size(); i++)
-	{
-		size_t ti = i * 7;
-
-		NiTransform& transform = curTransforms[names[i]];
-		transform.pos = NiPoint3(transforms[ti], transforms[ti + 1], transforms[ti + 2]);
-		transform.rot.SetEulerAngles(transforms[ti + 3], transforms[ti + 4], transforms[ti + 5]);
-		transform.scale = transforms[ti + 6];
-	}
-
-	TESObjectREFR* ref = GetRef();
-	if (!ref)
-	{
-		return;
-	}
-
-	NiNode* root = ref->GetActorRootNode(false);
-	if (!root)
-	{
-		return;
-	}
-
-	/*root->Visit([=](NiAVObject* obj)
-		{
-			NiNode* node = dynamic_cast<NiNode*>(obj);
-			if (!node)
-			{
-				return false;
-			}
-
-			prevTransforms[node->m_name.c_str()] = node->m_localTransform;
-
-			return false;
-		});*/
-
-	prevTransforms.swap(curTransforms);
-
-	if (curTransformTime < 0.f)
-	{
-		curTransformTime = zpl_time_now();
-	}
-
-	prevTransformTime = curTransformTime;
-	curTransformTime = zpl_time_now();
-
-	transformDeltaTime = transformDeltaTime * transformDeltaTimeInertia + (curTransformTime - prevTransformTime) * (1.f - transformDeltaTimeInertia);
+	//transformDeltaTime = transformDeltaTime * transformDeltaTimeInertia + (curTransformTime - prevTransformTime) * (1.f - transformDeltaTimeInertia);
 }
 
 void f4mp::Player::OnEntityRemove(librg_event* event)
 {
-	Entity::OnEntityRemove(event);
+	Character::OnEntityRemove(event);
 }
 
 void f4mp::Player::OnClientUpdate(librg_event* event)
 {
-	Entity::OnClientUpdate(event);
+	Character::OnClientUpdate(event);
 
 	const std::string& animState = GetAnimState();
 
@@ -163,101 +112,11 @@ void f4mp::Player::OnClientUpdate(librg_event* event)
 	librg_data_wf32(event->data, GetNumber("health"));
 
 	librg_data_wi32(event->data, GetAnimStateID());
-
-	std::vector<std::string> names;
-	std::vector<float> transforms;
-
-	TESObjectREFR* ref = GetRef();
-	if (ref)
-	{
-		NiNode* root = ref->GetActorRootNode(false);
-		if (root)
-		{
-			root->Visit([&](NiAVObject* obj)
-				{
-					NiNode* node = dynamic_cast<NiNode*>(obj);
-					if (!node)
-					{
-						return false;
-					}
-
-					names.push_back(node->m_name.c_str());
-
-					transforms.push_back(node->m_localTransform.pos.x);
-					transforms.push_back(node->m_localTransform.pos.y);
-					transforms.push_back(node->m_localTransform.pos.z);
-
-					float rot[3];
-					node->m_localTransform.rot.GetEulerAngles(&rot[0], &rot[1], &rot[2]);
-					transforms.push_back(rot[0]);
-					transforms.push_back(rot[1]);
-					transforms.push_back(rot[2]);
-
-					transforms.push_back(node->m_localTransform.scale);
-
-					return false;
-				});
-		}
-	}
-
-	Utils::Write(event->data, names);
-	Utils::Write(event->data, transforms);
 }
 
 void f4mp::Player::OnTick()
 {
-	F4MP::GetInstance().task->AddTask(new Task([=]()
-		{
-			TESObjectREFR* ref = GetRef();
-			if (!ref)
-			{
-				return;
-			}
-
-			NiNode* root = ref->GetActorRootNode(false);
-			if (!root)
-			{
-				return;
-			}
-
-			root->Visit([=](NiAVObject* obj)
-				{
-					NiNode* node = dynamic_cast<NiNode*>(obj);
-					if (!node)
-					{
-						return false;
-					}
-
-					auto prevFound = prevTransforms.find(node->m_name.c_str());
-					auto curFound = curTransforms.find(node->m_name.c_str());
-
-					if (prevFound == prevTransforms.end() || curFound == curTransforms.end())
-					{
-						return false;
-					}
-
-					//printf("%f %f\n", zpl_time_now() - prevTransformTime, (zpl_time_now() - prevTransformTime) / transformDeltaTime);
-
-					/*float t = min((zpl_time_now() - prevTransformTime) / transformDeltaTime, 1.f);
-
-					for (int i = 0; i < 12; i++)
-					{
-						node->m_localTransform.rot.arr[i] = prevFound->second.rot.arr[i] * (1.f - t) + curFound->second.rot.arr[i] * t;
-					}
-					
-					node->m_localTransform.pos = prevFound->second.pos * (1.f - t) + curFound->second.pos * t;
-					node->m_localTransform.scale = prevFound->second.scale * (1.f - t) + curFound->second.scale * t;*/
-
-					node->m_localTransform = curFound->second;
-
-					return false;
-				});
-
-			//root->UpdateTransforms();
-
-			NiAVObject::NiUpdateData updateData;
-			root->UpdateWorldData(&updateData);
-		}));
+	Character::OnTick();
 }
 
 SInt32 f4mp::Player::GetInteger(const std::string& name) const
@@ -323,7 +182,7 @@ const f4mp::client::WornItemsData& f4mp::Player::GetWornItems() const
 
 void f4mp::Player::OnConnectRequest(librg_event* event)
 {
-	Entity::OnConnectRequest(event);
+	Character::OnConnectRequest(event);
 
 	Utils::Write(event->data, appearance.female);
 	Utils::Write(event->data, appearance.weights);
@@ -341,7 +200,7 @@ void f4mp::Player::OnConnectRequest(librg_event* event)
 
 void f4mp::Player::OnConnectAccept(librg_event* event)
 {
-	Entity::OnConnectAccept(event);
+	Character::OnConnectAccept(event);
 
 	entityID = event->entity->id;
 
@@ -350,7 +209,7 @@ void f4mp::Player::OnConnectAccept(librg_event* event)
 
 void f4mp::Player::OnDisonnect(librg_event* event)
 {
-	Entity::OnDisonnect(event);
+	Character::OnDisonnect(event);
 }
 
 int f4mp::Player::GetWalkDir(const zpl_vec2& displacement, float lookAngle)
@@ -537,10 +396,8 @@ void f4mp::Player::SetWornItems(Actor* actor, const WornItemsData& wornItems)
 		});
 }
 
-f4mp::Player::Player() : entityID((UInt32)-1), prevTransformTime(-1.f), curTransformTime(-1.f), transformDeltaTime(0.f), transformDeltaTimeInertia(0.9f)
+f4mp::Player::Player() : entityID((UInt32)-1)
 {
-	animation = std::make_unique<Animation>();
-
 	SetAnimStateID(0);
 
 	SetNumber("health", 1.f);

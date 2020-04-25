@@ -1,10 +1,10 @@
 #pragma once
 
-#include "Entity.h"
+#include "Character.h"
 
 namespace f4mp
 {
-	class Player : public Entity
+	class Player : public Character
 	{
 	public:
 		void OnConnectRequest(librg_event* event) override;
@@ -19,9 +19,6 @@ namespace f4mp
 		const WornItemsData& GetWornItems() const;
 
 	private:
-		std::vector<std::string> nodeNames;
-		std::vector<float> nodeTransforms;
-
 		float health;
 
 		int animState;

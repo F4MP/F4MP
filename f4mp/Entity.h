@@ -34,6 +34,7 @@ namespace f4mp
 
 		virtual void OnTick();
 
+		const librg_entity* GetNetworkEntity() const;
 		librg_entity* GetNetworkEntity();
 		TESObjectREFR* GetRef();
 		void SetRef(TESObjectREFR* ref);
