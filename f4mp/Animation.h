@@ -13,8 +13,8 @@ namespace f4mp
 		};
 
 	private:
-		static std::vector<std::vector<std::string>> allowedNodes;
-		static std::vector<std::unordered_map<std::string, UInt32>> allowedNodeIndices;
+		static std::vector<std::vector<std::string>> animatedNodes;
+		static std::vector<std::unordered_map<std::string, UInt32>> animatedNodeIndices;
 		
 		static std::vector<std::string> stateNames;
 		static std::unordered_map<std::string, SInt32> stateIDs;
@@ -26,7 +26,7 @@ namespace f4mp
 
 		size_t GetAllowedNodeCount() const;
 
-		bool IsAllowedNode(const std::string& nodeName) const;
+		bool IsAnimatedNode(const std::string& nodeName) const;
 
 		const std::string& GetNodeName(UInt32 nodeIndex) const;
 		UInt32 GetNodeIndex(const std::string& nodeName) const;

@@ -1,7 +1,7 @@
 #include "Animation.h"
 
-std::vector<std::vector<std::string>> f4mp::Animation::allowedNodes;
-std::vector<std::unordered_map<std::string, UInt32>> f4mp::Animation::allowedNodeIndices;
+std::vector<std::vector<std::string>> f4mp::Animation::animatedNodes;
+std::vector<std::unordered_map<std::string, UInt32>> f4mp::Animation::animatedNodeIndices;
 
 std::vector<std::string> f4mp::Animation::stateNames;
 std::unordered_map<std::string, SInt32> f4mp::Animation::stateIDs;
@@ -13,23 +13,23 @@ f4mp::Animation::Animation(Type type) : type(type)
 
 size_t f4mp::Animation::GetAllowedNodeCount() const
 {
-	return allowedNodes[type].size();
+	return animatedNodes[type].size();
 }
 
-bool f4mp::Animation::IsAllowedNode(const std::string& nodeName) const
+bool f4mp::Animation::IsAnimatedNode(const std::string& nodeName) const
 {
-	return allowedNodeIndices[type].count(nodeName) != 0;
+	return animatedNodeIndices[type].count(nodeName) != 0;
 }
 
 const std::string& f4mp::Animation::GetNodeName(UInt32 nodeIndex) const
 {
-	return allowedNodes[type][nodeIndex];
+	return animatedNodes[type][nodeIndex];
 }
 
 UInt32 f4mp::Animation::GetNodeIndex(const std::string& nodeName) const
 {
-	auto foundNode = allowedNodeIndices[type].find(nodeName);
-	if (foundNode == allowedNodeIndices[type].end())
+	auto foundNode = animatedNodeIndices[type].find(nodeName);
+	if (foundNode == animatedNodeIndices[type].end())
 	{
 		return (UInt32)-1;
 	}
@@ -41,7 +41,7 @@ void f4mp::Animation::Init()
 {
 	if (stateNames.size() == 0)
 	{
-		allowedNodes =
+		animatedNodes =
 		{
 			// Human
 			{
@@ -106,7 +106,7 @@ void f4mp::Animation::Init()
 			}
 		};
 
-		for (const std::vector<std::string>& allowedNodesInType : allowedNodes)
+		for (const std::vector<std::string>& allowedNodesInType : animatedNodes)
 		{
 			std::unordered_map<std::string, UInt32> allowedNodeIndicesInType;
 
@@ -115,7 +115,7 @@ void f4mp::Animation::Init()
 				allowedNodeIndicesInType[allowedNode] = allowedNodeIndicesInType.size();
 			}
 
-			allowedNodeIndices.push_back(allowedNodeIndicesInType);
+			animatedNodeIndices.push_back(allowedNodeIndicesInType);
 		}
 
 		stateNames =

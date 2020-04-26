@@ -20,7 +20,7 @@ f4mp::Entity* f4mp::Entity::Get(librg_entity* entity)
 	return (Entity*)entity->user_data;
 }
 
-f4mp::Entity::Entity() : entity(nullptr)
+f4mp::Entity::Entity() : entity(nullptr), refFormID((UInt32)-1)
 {
 	SetNumber("angleX", 0.f);
 	SetNumber("angleY", 0.f);
@@ -87,6 +87,7 @@ void f4mp::Entity::OnEntityRemove(librg_event* event)
 
 void f4mp::Entity::OnClientUpdate(librg_event* event)
 {
+	TESObjectREFR* ref = GetRef();
 	if (ref)
 	{
 		entity->position = (zpl_vec3&)ref->pos;
@@ -117,12 +118,15 @@ librg_entity* f4mp::Entity::GetNetworkEntity()
 
 TESObjectREFR* f4mp::Entity::GetRef()
 {
-	return ref;
+	//return ref;
+	return dynamic_cast<TESObjectREFR*>(LookupFormByID(refFormID));
 }
 
 void f4mp::Entity::SetRef(TESObjectREFR* ref)
 {
-	this->ref = ref;
+	refFormID = ref->formID;
+
+	//this->ref = ref;
 
 	/*NiNode* root = ref->GetActorRootNode(false);
 	if (root)
@@ -170,6 +174,7 @@ void f4mp::Entity::OnEntityUpdate(librg_event* event, bool syncTransform)
 
 	if (syncTransform)
 	{
+		TESObjectREFR* ref = GetRef();
 		F4MP::SyncTransform(ref, entity->position, angles, true);
 	}
 }

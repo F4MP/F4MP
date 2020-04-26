@@ -11,8 +11,8 @@ void f4mp::NPC::OnEntityCreate(librg_event* event)
 
 	UInt32 entityID = GetNetworkEntity()->id;
 
-	formID = librg_data_rf32(event->data);
-	ownerEntityID = librg_data_rf32(event->data);
+	formID = librg_data_ri32(event->data);
+	ownerEntityID = librg_data_ri32(event->data);
 
 	F4MP& f4mp = F4MP::GetInstance();
 

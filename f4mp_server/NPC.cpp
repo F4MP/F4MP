@@ -8,6 +8,6 @@ void f4mp::NPC::OnEntityCreate(librg_event* event)
 {
 	Character::OnEntityCreate(event);
 
-	librg_data_wf32(event->data, formID);
-	librg_data_wf32(event->data, ownerEntityID);
+	librg_data_wi32(event->data, formID);
+	librg_data_wi32(event->data, ownerEntityID);
 }

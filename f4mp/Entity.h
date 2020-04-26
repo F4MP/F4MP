@@ -47,7 +47,8 @@ namespace f4mp
 
 	private:
 		librg_entity* entity;
-		TESObjectREFR* ref;
+		//TESObjectREFR* ref;
+		UInt32 refFormID;
 
 		std::unordered_map<std::string, Float32> numbers;
 	};

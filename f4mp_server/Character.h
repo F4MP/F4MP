@@ -16,6 +16,6 @@ namespace f4mp
 	private:
 		std::vector<float> nodeTransforms;
 
-		float transformDeltaTime;
+		double transformTime;
 	};
 }

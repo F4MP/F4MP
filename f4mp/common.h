@@ -212,6 +212,12 @@ namespace f4mp
 		}
 
 		template<>
+		static void Write(librg_data* data, const f64& value)
+		{
+			librg_data_wf64(data, value);
+		}
+
+		template<>
 		static void Write(librg_data* data, const std::string& value)
 		{
 			//_MESSAGE("%s", value.c_str());
@@ -267,6 +273,12 @@ namespace f4mp
 		static void Read(librg_data* data, f32& value)
 		{
 			value = librg_data_rf32(data);
+		}
+
+		template<>
+		static void Read(librg_data* data, f64& value)
+		{
+			value = librg_data_rf64(data);
 		}
 
 		template<>

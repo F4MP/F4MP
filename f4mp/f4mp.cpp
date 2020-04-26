@@ -221,6 +221,69 @@ bool f4mp::F4MP::Init(const F4SEInterface* f4se)
 
 	Animation::Init();
 
+	messaging->RegisterListener(handle, "F4SE", [](F4SEMessagingInterface::Message* msg)
+		{
+			switch (msg->type)
+			{
+			case F4SEMessagingInterface::kMessage_PostLoadGame:
+			{
+				struct OnTick : public IF4SEDelayFunctor
+				{
+					OnTick()
+					{
+
+					}
+
+					const char* ClassName() const override
+					{
+						return "OnTick";
+					}
+
+					UInt32 ClassVersion() const override
+					{
+						return 1;
+					}
+
+					bool Save(const F4SESerializationInterface* intfc) override
+					{
+						return true;
+					}
+
+					bool Load(const F4SESerializationInterface* intfc, UInt32 version) override
+					{
+						return true;
+					}
+
+					bool Run(VMValue& resultOut) override
+					{
+						F4MP& f4mp = F4MP::GetInstance();
+
+						librg_entity_iterate(&f4mp.ctx, LIBRG_ENTITY_ALIVE, [](librg_ctx* ctx, librg_entity* entity)
+							{
+								Entity::Get(entity)->OnTick();
+							});
+
+						return true;
+					}
+
+					bool ShouldReschedule(SInt32& delayMSOut) override
+					{
+						delayMSOut = 1;
+						return true;
+					}
+
+					bool ShouldResumeStack(UInt32& stackIdOut) override
+					{
+						return false;
+					}
+				};
+
+				GetInstance().object->GetDelayFunctorManager().Enqueue(new OnTick());
+				break;
+			}
+			}
+		});
+
 	return true;
 }
 
@@ -613,65 +676,6 @@ bool f4mp::F4MP::Disconnect(StaticFunctionTag* base)
 
 void f4mp::F4MP::Tick(StaticFunctionTag* base)
 {
-	static bool init = true;
-	if (init)
-	{
-		struct AnimationTick : public IF4SEDelayFunctor
-		{
-			AnimationTick()
-			{
-
-			}
-
-			const char* ClassName() const override
-			{
-				return "AnimationTick";
-			}
-
-			UInt32 ClassVersion() const override
-			{
-				return 1;
-			}
-
-			bool Save(const F4SESerializationInterface* intfc) override
-			{
-				return true;
-			}
-
-			bool Load(const F4SESerializationInterface* intfc, UInt32 version) override
-			{
-				return true;
-			}
-
-			bool Run(VMValue& resultOut) override
-			{
-				F4MP& f4mp = F4MP::GetInstance();
-
-				librg_entity_iterate(&f4mp.ctx, LIBRG_ENTITY_ALIVE, [](librg_ctx* ctx, librg_entity* entity)
-					{
-						Entity::Get(entity)->OnTick();
-					});
-
-				return true;
-			}
-
-			bool ShouldReschedule(SInt32& delayMSOut) override
-			{
-				delayMSOut = 1;
-				return true;
-			}
-
-			bool ShouldResumeStack(UInt32& stackIdOut) override
-			{
-				return false;
-			}
-		};
-
-		GetInstance().object->GetDelayFunctorManager().Enqueue(new AnimationTick());
-
-		init = false;
-	}
-
 	//F4MP& self = GetInstance();
 	//librg_tick(&self.ctx);
 
@@ -726,9 +730,6 @@ void f4mp::F4MP::SyncWorld(StaticFunctionTag* base)
 
 		if ((ref->formID & 0xff000000) == 0xff000000)
 		{
-			// TODO: ignoring settlement building sync for the moment.
-			continue;
-
 			if (ref->baseForm->formType == 36 && !(ref->flags & TESObjectREFR::kFlag_IsDeleted))
 			{
 				// 36 means static objects, right?
