@@ -26,9 +26,9 @@ void f4mp::Character::OnEntityUpdate(librg_event* event)
 
 	float deltaTime = syncTime - transformBuffer.syncTime;
 
-	if (deltaTime < 1e-3f)
+	if (deltaTime < 1e-2f)
 	{
-		transformBuffer.syncTime = syncTime;
+		//transformBuffer.syncTime = syncTime;
 		return;
 	}
 
@@ -42,6 +42,12 @@ void f4mp::Character::OnEntityUpdate(librg_event* event)
 		transform.position = { transforms[ti], transforms[ti + 1], transforms[ti + 2] };
 		transform.rotation = { transforms[ti + 3], transforms[ti + 4], transforms[ti + 5], transforms[ti + 6] };
 		transform.scale = transforms[ti + 7];
+
+		float mag = zpl_quat_mag(transform.rotation);
+		if (isnan(mag) || fabsf(mag - 1.f) > 1e-2f)
+		{
+			transform.rotation = { 0, 0, 0, 0 };
+		}
 	}
 
 	if (transformBuffer.prev.size() == 0)
@@ -102,9 +108,6 @@ void f4mp::Character::OnClientUpdate(librg_event* event)
 
 					index *= 8;
 
-					//float rot[3];
-					//node->m_localTransform.rot.GetEulerAngles(&rot[0], &rot[1], &rot[2]);
-
 					const NiMatrix43 rot = node->m_localTransform.rot;
 					zpl_mat4 mat
 					{
@@ -118,11 +121,6 @@ void f4mp::Character::OnClientUpdate(librg_event* event)
 					transforms[index + 0] = node->m_localTransform.pos.x;
 					transforms[index + 1] = node->m_localTransform.pos.y;
 					transforms[index + 2] = node->m_localTransform.pos.z;
-					//transforms[index + 3] = rot[0];
-					//transforms[index + 4] = rot[1];
-					//transforms[index + 5] = rot[2];
-					//transforms[index + 6] = node->m_localTransform.scale;
-
 					transforms[index + 3] = quat.x;
 					transforms[index + 4] = quat.y;
 					transforms[index + 5] = quat.z;
@@ -193,6 +191,11 @@ void f4mp::Character::OnTick()
 
 					node->m_localTransform.pos = (NiPoint3&)curTransform.position;
 					node->m_localTransform.scale = curTransform.scale;
+
+					if (fabsf(zpl_quat_mag(nextTransform.rotation) - 1.f) > 1e-2f || fabsf(zpl_quat_mag(prevTransform.rotation) - 1.f) > 1e-2f)
+					{
+						return false;
+					}
 
 					zpl_mat4 rot;
 					zpl_mat4_from_quat(&rot, curTransform.rotation);

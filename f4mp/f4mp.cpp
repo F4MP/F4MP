@@ -362,7 +362,8 @@ void f4mp::F4MP::SyncTransform(TESObjectREFR* ref, zpl_vec3 position, zpl_vec3 a
 	x.Set<Float32>(&position.x); y.Set<Float32>(&position.y); z.Set<Float32>(&position.z);
 	angleX.Set<Float32>(&angles.x); angleY.Set<Float32>(&angles.y); angleZ.Set<Float32>(&angles.z);
 
-	float speed = zpl_vec3_mag(position - (zpl_vec3&)ref->pos) * 3.f, rotSpeed = 500.f;
+	// HACK: 10 might be too much
+	float speed = zpl_vec3_mag(position - (zpl_vec3&)ref->pos) * 10.f, rotSpeed = 500.f;
 	speedVar.Set<Float32>(&speed); rotSpeedVar.Set<Float32>(&rotSpeed);
 
 	VMArray<VMVariable> args;
