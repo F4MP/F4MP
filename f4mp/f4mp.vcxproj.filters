@@ -99,6 +99,12 @@
     <ClCompile Include="Character.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
+    <ClCompile Include="..\f4se\GameEvents.cpp">
+      <Filter>f4se</Filter>
+    </ClCompile>
+    <ClCompile Include="TopicInfoIDs.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="exports.def">
@@ -143,6 +149,9 @@
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="Character.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="TopicInfoIDs.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
   </ItemGroup>

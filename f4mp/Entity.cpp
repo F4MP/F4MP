@@ -116,6 +116,11 @@ librg_entity* f4mp::Entity::GetNetworkEntity()
 	return entity;
 }
 
+UInt32 f4mp::Entity::GetRefFormID() const
+{
+	return refFormID;
+}
+
 TESObjectREFR* f4mp::Entity::GetRef()
 {
 	//return ref;

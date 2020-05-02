@@ -90,7 +90,7 @@ void f4mp::Character::OnClientUpdate(librg_event* event)
 		NiNode* root = ref->GetActorRootNode(false);
 		if (root)
 		{
-			transforms.resize(animation->GetAllowedNodeCount() * 8);
+			transforms.resize(animation->GetAnimatedNodeCount() * 8);
 
 			root->Visit([&](NiAVObject* obj)
 				{
@@ -101,7 +101,7 @@ void f4mp::Character::OnClientUpdate(librg_event* event)
 					}
 
 					UInt32 index = animation->GetNodeIndex(node->m_name.c_str());
-					if (index >= animation->GetAllowedNodeCount())
+					if (index >= animation->GetAnimatedNodeCount())
 					{
 						return false;
 					}

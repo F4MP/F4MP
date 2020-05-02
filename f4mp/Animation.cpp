@@ -11,7 +11,7 @@ f4mp::Animation::Animation(Type type) : type(type)
 
 }
 
-size_t f4mp::Animation::GetAllowedNodeCount() const
+size_t f4mp::Animation::GetAnimatedNodeCount() const
 {
 	return animatedNodes[type].size();
 }

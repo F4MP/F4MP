@@ -17,7 +17,8 @@ namespace f4mp
 			SpawnEntity,
 			SyncEntity,
 			SpawnBuilding,
-			RemoveBuilding
+			RemoveBuilding,
+			Speak
 		};
 	};
 
@@ -74,6 +75,13 @@ namespace f4mp
 		u32 formID;
 		zpl_vec3 position;
 		zpl_vec3 angles;
+	};
+
+	struct SpeakData
+	{
+		u32 clientEntityID;
+		u32 speakerFormID; // 0 if client
+		u32 topicInfoFormID;
 	};
 
 	struct AppearanceData

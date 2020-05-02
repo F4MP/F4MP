@@ -24,7 +24,7 @@ namespace f4mp
 	public:
 		Animation(Type type);
 
-		size_t GetAllowedNodeCount() const;
+		size_t GetAnimatedNodeCount() const;
 
 		bool IsAnimatedNode(const std::string& nodeName) const;
 

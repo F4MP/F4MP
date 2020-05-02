@@ -11,8 +11,13 @@ ActorValue Property healthAV Auto
 
 Spell Property entitySyncSpell Auto
 
+VoiceType Property malePlayerVoiceType Auto
+VoiceType Property femalePlayerVoiceType Auto
+
 int[] playerIDs
 F4MPPlayer[] players
+
+bool topicInfosRegistered = false
 
 Event OnInit()
 	RegisterForKey(112)
@@ -26,6 +31,12 @@ Function OnEntityCreate(int entityID, Form[] itemsToWear)
 		F4MPPlayer entity = player.PlaceActorAtMe(f4mpPlayerBase) as F4MPPlayer
 		F4MP.SetEntityRef(entityID, entity)
 		entity.entityID = entityID
+
+		If f4mpPlayerBase.GetSex() == 0
+			entity.SetOverrideVoiceType(malePlayerVoiceType)
+		Else
+			entity.SetOverrideVoiceType(femalePlayerVoiceType)
+		EndIf
 		
 		entity.itemsToWear = itemsToWear
 		; SetWornItems(entity, itemsToWear)
@@ -49,6 +60,33 @@ EndFunction
 Function OnPlayerHit(float damage)
 	Game.GetPlayer().DamageValue(healthAV, damage)
 EndFunction
+
+Function RegisterTopicInfos(Form[] targets)
+	int i = 0
+	While i < targets.length
+		RegisterForRemoteEvent(targets[i] as TopicInfo, "OnBegin")
+		i += 1
+	EndWhile
+	
+	Debug.Trace(targets.length + " topic infos have registered.")
+	Debug.Notification(targets.length + " topic infos have registered.")
+EndFunction
+
+Function OnTopicInfoRegister(Form[] targets)
+	If topicInfosRegistered
+		return
+	EndIf
+
+	topicInfosRegistered = true
+	
+	RegisterTopicInfos(targets)
+EndFunction
+
+Event TopicInfo.OnBegin(TopicInfo akSender, ObjectReference akSpeakerRef, bool abHasBeenSaid)
+	;Debug.Trace("Topic info " + akSender + " is being said by " + akSpeakerRef.GetDisplayName())
+	;Debug.Notification("Topic info " + akSender + " is being said by " + akSpeakerRef)
+	F4MP.TopicInfoBegin(akSender, akSpeakerRef)
+EndEvent
 
 ;Function OnFireWeapon(int entityID)
 ;	int index = playerIDs.Find(entityID)
@@ -91,6 +129,9 @@ bool Function Connect(string address, int port)
 	return F4MP.Connect(client, clientActorBase, address, port)
 EndFunction
 
+Sound Property mySound Auto
+Topic Property myTopic Auto
+
 Event OnKeyDown(int keyCode)
 	If keyCode == 112
 		Connect("", 7779)
@@ -114,9 +155,16 @@ Event OnKeyDown(int keyCode)
 
 		RegisterForExternalEvent("OnPlayerHit", "OnPlayerHit")
 
+		RegisterForExternalEvent("OnTopicInfoRegister", "OnTopicInfoRegister")
+
 		RegisterForKey(113)
+		RegisterForKey(114)
 	ElseIf keyCode == 113
 		F4MP.SetClient(1 - F4MP.GetClientInstanceID())
+	ElseIf keyCode == 114
+		mySound.Play(Game.GetPlayer())
+		;Debug.Notification(myTopic)
+		;Game.GetPlayer().Say(myTopic)
 	EndIf
 EndEvent
 

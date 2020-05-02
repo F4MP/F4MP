@@ -239,6 +239,16 @@ namespace f4mp
 			librg_message_send_except(msg->ctx, MessageType::RemoveBuilding, msg->peer, &data, sizeof(RemoveBuildingData));
 		}
 
+		static void OnSpeak(librg_message* msg)
+		{
+			SpeakData data;
+			librg_data_rptr(msg->data, &data, sizeof(SpeakData));
+
+			printf("%u: %X spoke %X\n", data.clientEntityID, data.speakerFormID, data.topicInfoFormID);
+
+			librg_message_send_except(msg->ctx, MessageType::Speak, msg->peer, &data, sizeof(SpeakData));
+		}
+
 	public:
 		Server(const std::string& address)
 		{
@@ -274,6 +284,7 @@ namespace f4mp
 			librg_network_add(&ctx, MessageType::SyncEntity, OnSyncEntity);
 			librg_network_add(&ctx, MessageType::SpawnBuilding, OnSpawnBuilding);
 			librg_network_add(&ctx, MessageType::RemoveBuilding, OnRemoveBuilding);
+			librg_network_add(&ctx, MessageType::Speak, OnSpeak);
 
 			librg_network_start(&ctx, librg_address{ 7779, const_cast<char*>(address.c_str()) });
 

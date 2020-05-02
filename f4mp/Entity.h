@@ -36,6 +36,7 @@ namespace f4mp
 
 		const librg_entity* GetNetworkEntity() const;
 		librg_entity* GetNetworkEntity();
+		UInt32 GetRefFormID() const;
 		TESObjectREFR* GetRef();
 		void SetRef(TESObjectREFR* ref);
 

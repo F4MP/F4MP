@@ -34,6 +34,7 @@ Function CopyWornItems(Actor src, Actor dest) global native
 
 Function PlayerHit(int hitter, int hittee, float damage) global native
 Function PlayerFireWeapon() global native
+Function TopicInfoBegin(Form info, ObjectReference speaker) global native
 
 ObjectReference[] Function GetEntitySyncRefs(bool clear) global native
 float[] Function GetEntitySyncTransforms(bool clear) global native

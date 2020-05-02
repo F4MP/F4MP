@@ -11,6 +11,7 @@
     } while (0)
 
 #include "f4mp.h"
+#include "TopicInfoIDs.h"
 #include "f4se/NiNodes.h"
 #include "f4se/PapyrusDelayFunctors.h"
 
@@ -55,6 +56,7 @@ f4mp::F4MP::F4MP() : ctx{}, port(0), handle(kPluginHandle_Invalid), messaging(nu
 	librg_network_add(&ctx, MessageType::SyncEntity, OnSyncEntity);
 	librg_network_add(&ctx, MessageType::SpawnBuilding, OnSpawnBuilding);
 	librg_network_add(&ctx, MessageType::RemoveBuilding, OnRemoveBuilding);
+	librg_network_add(&ctx, MessageType::Speak, OnSpeak);
 
 	char	path[MAX_PATH];
 	HRESULT err = SHGetFolderPath(NULL, CSIDL_MYDOCUMENTS | CSIDL_FLAG_CREATE, NULL, SHGFP_TYPE_CURRENT, path);
@@ -96,28 +98,6 @@ bool f4mp::F4MP::Init(const F4SEInterface* f4se)
 	papyrus = (F4SEPapyrusInterface*)f4se->QueryInterface(kInterface_Papyrus);
 	task = (F4SETaskInterface*)f4se->QueryInterface(kInterface_Task);
 	object = (F4SEObjectInterface*)f4se->QueryInterface(kInterface_Object);
-
-	/*messaging->RegisterListener(handle, "F4SE", [](F4SEMessagingInterface::Message* msg)
-	{
-		switch (msg->type)
-		{
-		case F4SEMessagingInterface::kMessage_GameDataReady:
-		{
-			auto arr = &(*g_dataHandler)->arrNONE;
-
-			for (int i = 0; i < kFormType_Max; i++)
-			{
-				for (UInt32 j = 0; j < arr[i].count; j++)
-				{
-					if (arr[i][j]->GetFormType() == kFormType_IDLE)
-					{
-						_MESSAGE("%d: %s", i, arr[i][j]->GetFullName());
-					}
-				}
-			}
-		}
-		}
-	});*/
 
 	if (!papyrus->Register([](VirtualMachine* vm)
 		{
@@ -185,6 +165,85 @@ bool f4mp::F4MP::Init(const F4SEInterface* f4se)
 			vm->RegisterFunction(new NativeFunction3<StaticFunctionTag, void, UInt32, UInt32, Float32>("PlayerHit", "F4MP", PlayerHit, vm));
 			vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("PlayerFireWeapon", "F4MP", PlayerFireWeapon, vm));
 
+			vm->RegisterFunction(new NativeFunction2<StaticFunctionTag, void, TESForm*, TESObjectREFR*>("TopicInfoBegin", "F4MP",
+				[](StaticFunctionTag* base, TESForm* topicInfo, TESObjectREFR* speaker)
+				{
+					/*static std::unordered_map<UInt32, UInt32> counts;
+					counts[topicInfo->formID]++;
+
+					for (auto& count : counts)
+					{
+						printf("%u : %u ", count.first, count.second);
+					}
+					printf("\n");
+
+					switch (speaker->formID)
+					{
+					case 0x1D882B:
+					case 0xE0B61:
+					case 0x1E2300:
+					case 0x1DE88E:
+					case 0x1D882C:
+					case 0x191F21:
+					case 0x1E2301:
+					case 0x1D882A:
+					case 0x1D206D:
+					case 0x1D1AED:
+					case 0x1DE7F6:
+					case 0x1AC2E5:
+					case 0x1D206E:
+					case 0x1D1AEC:
+					case 0x193B43:
+					case 0x2F27:
+					case 0x4338C:
+					case 0xED666:
+					case 0xF480B:
+					case 0x1D2864:
+					case 0x193C39:
+					case 0x248028:
+					case 0x2A195:
+					case 0x16939F:
+						return;
+					}*/
+
+					std::unordered_set<UInt32>& linesToSpeak = GetInstance().linesToSpeak[speaker->formID];
+					if (linesToSpeak.count(topicInfo->formID) > 0)
+					{
+						linesToSpeak.erase(topicInfo->formID);
+					}
+
+					BSFixedString name = [](TESForm* baseForm, ExtraDataList* extraDataList)
+					{
+						if (baseForm)
+						{
+							if (extraDataList)
+							{
+								BSExtraData* extraData = extraDataList->GetByType(ExtraDataType::kExtraData_TextDisplayData);
+								if (extraData)
+								{
+									ExtraTextDisplayData* displayText = DYNAMIC_CAST(extraData, BSExtraData, ExtraTextDisplayData);
+									if (displayText)
+									{
+										return *CALL_MEMBER_FN(displayText, GetReferenceName)(baseForm);
+									}
+								}
+							}
+
+							TESFullName* pFullName = DYNAMIC_CAST(baseForm, TESForm, TESFullName);
+							if (pFullName)
+								return pFullName->name;
+						}
+
+						return BSFixedString();
+					}(speaker->baseForm, speaker->extraDataList);
+					printf("topic info: %X / speaker: %s\n", topicInfo->formID, name.c_str());
+
+					F4MP& self = GetInstance();
+
+					SpeakData data{ self.player->GetEntityID(), self.player->GetRefFormID() == speaker->formID ? 0x0 : speaker->formID, topicInfo->formID };
+					librg_message_send_all(&self.ctx, MessageType::Speak, &data, sizeof(SpeakData));
+				}, vm));
+
 			vm->SetFunctionFlags("F4MP", "GetClientInstanceID", IFunction::kFunctionFlag_NoWait);
 			vm->SetFunctionFlags("F4MP", "SetClient", IFunction::kFunctionFlag_NoWait);
 			vm->SetFunctionFlags("F4MP", "IsConnected", IFunction::kFunctionFlag_NoWait);
@@ -222,67 +281,399 @@ bool f4mp::F4MP::Init(const F4SEInterface* f4se)
 	Animation::Init();
 
 	messaging->RegisterListener(handle, "F4SE", [](F4SEMessagingInterface::Message* msg)
+	{
+		switch (msg->type)
 		{
-			switch (msg->type)
+		case F4SEMessagingInterface::kMessage_GameDataReady:
+		{
+			/*tArray<TESForm*>& sounds = (*g_dataHandler)->arrSOUN;
+			tArray<TESForm*>& soundDescs = (*g_dataHandler)->arrSNDR;
+			tArray<TESForm*>& topics = (*g_dataHandler)->arrDIAL;
+			tArray<TESForm*>& scenes = (*g_dataHandler)->arrSCEN;
+
+			printf("sounds(%u):\n", sounds.count);
+			printf("sound descs(%u):\n", soundDescs.count);
+			printf("topics(%u):\n", topics.count);
+			printf("scenes(%u):\n", scenes.count);
+
+			for (UInt32 i = 0; i < sounds.count; i++)
 			{
-			case F4SEMessagingInterface::kMessage_PostLoadGame:
+				printf("%u: %s\n", i, sounds[i]->GetFullName());
+			}
+
+			for (UInt32 i = 0; i < soundDescs.count; i++)
 			{
-				struct OnTick : public IF4SEDelayFunctor
+				printf("%u: %s\n", i, soundDescs[i]->GetFullName());
+			}
+
+			for (UInt32 i = 0; i < topics.count; i++)
+			{
+				printf("%u: %s\n", i, topics[i]->GetFullName());
+			}
+
+			for (UInt32 i = 0; i < scenes.count; i++)
+			{
+				printf("%u: %s\n", i, scenes[i]->GetFullName());
+			}*/
+
+			/*tArray<BGSKeyword*>& keywords = (*g_dataHandler)->arrKYWD;
+
+			printf("keywords(%u):\n", keywords.count);
+
+			for (UInt32 i = 0; i < keywords.count; i++)
+			{
+				BGSKeyword* keyword = keywords[i];
+				if (Lower(keyword->keyword.c_str()).find("topic") == std::string::npos)
 				{
-					OnTick()
+					continue;
+				}
+
+				printf("%u: \"%s\" \"%s\"\n", i, keyword->GetFullName(), keyword->keyword.c_str());
+			}*/
+
+			/*tArray<TESForm*>& quests = (*g_dataHandler)->arrQUST;
+
+			printf("quests(%u):\n", quests.count);
+
+			for (UInt32 i = 0; i < quests.count; i++)
+			{
+				TESQuest* quest = dynamic_cast<TESQuest*>(quests[i]);
+				if (!quest)
+				{
+					continue;
+				}
+
+				printf("%s\n", quest->GetFullName());
+
+				for (UInt8* ptr = (UInt8*)quest->unk38; ptr != (UInt8*)&quest->unkF0; ptr++)
+				{
+					printf("%02x ", *ptr);
+				}
+
+				for (UInt8* ptr = (UInt8*)quest->unk38; ptr != (UInt8*)&quest->unkF0; ptr++)
+				{
+					printf("%c", *ptr);
+				}
+
+				printf("\n");
+			}*/
+
+			tArray<TESForm*>& topics = (*g_dataHandler)->arrDIAL;
+
+			printf("topics(%u): %u\n", topics.count, kFormType_DIAL);
+
+			/*for (UInt32 i = 0; i < topics.count; i++)
+			{
+				printf("%u(%u): %s / ", i, topics[i]->formType, topics[i]->GetFullName());
+			}*/
+
+			/*auto& eventSources = (*g_globalEvents)->eventSources;
+
+			for (UInt32 i = 0; i < eventSources.count; i++)
+			{
+				if (i == 3)
+				{
+					continue;
+				}
+
+				class Sink : public BSTEventSink<void*>
+				{
+				public:
+					UInt32 index;
+
+					Sink(UInt32 index) : index(index)
 					{
 
 					}
 
-					const char* ClassName() const override
+					EventResult	ReceiveEvent(void** evn, void* dispatcher)
 					{
-						return "OnTick";
-					}
-
-					UInt32 ClassVersion() const override
-					{
-						return 1;
-					}
-
-					bool Save(const F4SESerializationInterface* intfc) override
-					{
-						return true;
-					}
-
-					bool Load(const F4SESerializationInterface* intfc, UInt32 version) override
-					{
-						return true;
-					}
-
-					bool Run(VMValue& resultOut) override
-					{
-						F4MP& f4mp = F4MP::GetInstance();
-
-						librg_entity_iterate(&f4mp.ctx, LIBRG_ENTITY_ALIVE, [](librg_ctx* ctx, librg_entity* entity)
-							{
-								Entity::Get(entity)->OnTick();
-							});
-
-						return true;
-					}
-
-					bool ShouldReschedule(SInt32& delayMSOut) override
-					{
-						delayMSOut = 1;
-						return true;
-					}
-
-					bool ShouldResumeStack(UInt32& stackIdOut) override
-					{
-						return false;
-					}
+						printf("%u: %p\n", index, evn);
+						return kEvent_Continue;
+					};
 				};
 
-				GetInstance().object->GetDelayFunctorManager().Enqueue(new OnTick());
-				break;
+				eventSources[i]->eventDispatcher.AddEventSink(new Sink(i));
+			}*/
+
+			//typedef BSTEventDispatcher<void*>* (*_GetEventDispatcher)();
+
+			//RelocAddr<_GetEventDispatcher> GetDispatcher(0x004420F0);
+
+			//UInt8* ptr = (UInt8*)GetDispatcher.GetUIntPtr();
+
+			//static std::unordered_map<int, size_t> cnt;
+
+			//for (int i = -23; i < 61; i++)
+			//{
+			//	switch (i)
+			//	{
+			//	case 20:
+			//	//case 43:
+			//	case -3:
+			//	case 49:
+			//	case 32:
+			//	case 40:
+			//	case 25:
+			//	case 41:
+			//	case 31:
+			//	case 27:
+			//		continue;
+			//	}
+
+			//	_GetEventDispatcher getEventDispatcher = (_GetEventDispatcher)(ptr + (i * 160));
+			//	BSTEventDispatcher<void*>* eventDispatcher = getEventDispatcher();
+
+			//	class Sink : public BSTEventSink<void*>
+			//	{
+			//	public:
+			//		int index;
+
+			//		Sink(int index) : index(index)
+			//		{
+
+			//		}
+
+			//		EventResult	ReceiveEvent(void** evn, void* dispatcher)
+			//		{
+			//			cnt[index]++;
+			//			printf("%d: %p\n", index, evn);
+
+			//			return kEvent_Continue;
+			//		};
+			//	};
+
+			//	eventDispatcher->AddEventSink(new Sink(i));
+			//}
+
+			/*tArray<TESForm*>& quests = (*g_dataHandler)->arrQUST;
+
+			for (UInt32 i = 0; i < 2; i++)
+			{
+				TESQuest* quest = DYNAMIC_CAST(quests[i], TESForm, TESQuest);
+				if (!quest)
+				{
+					continue;
+				}
+
+				for (UInt8* ptr = (UInt8*)&quest->unk38[((0xF0 - 0x38) >> 3) - 1]; ptr >= (UInt8*)&quest->unk38[0]; ptr--)
+				{
+					printf("%02X", *ptr);
+				}
+				printf("\n");
+
+				for (UInt8* ptr = (UInt8*)&quest->unk0F8[((0x2F0 - 0xF8) >> 3) - 1]; ptr >= (UInt8*)&quest->unk0F8[0]; ptr--)
+				{
+					printf("%02X", *ptr);
+				}
+				printf("\n");
+			}*/
+
+			TESQuest* quest = DYNAMIC_CAST(LookupFormByID(0x0005DEE4), TESForm, TESQuest);
+			if (quest)
+			{
+				/*for (UInt8* ptr = (UInt8*)&quest->unk38[((0xF0 - 0x38) >> 3) - 1]; ptr >= (UInt8*)&quest->unk38[0]; ptr--)
+				{
+					printf("%02X", *ptr);
+				}
+				printf("\n");
+
+				for (UInt8* ptr = (UInt8*)&quest->unk0F8[((0x2F0 - 0xF8) >> 3) - 1]; ptr >= (UInt8*)&quest->unk0F8[0]; ptr--)
+				{
+					printf("%02X", *ptr);
+				}
+				printf("\n");*/
+
+				//UInt8* ptr = *(UInt8**)((UInt8*)&quest->unk38[0] + 80);
+				//printf("%p\n", ptr);
+				///*for (int i = 199; i >= 0; i--)
+				//{
+				//	printf("%02X", ptr[i]);
+				//}
+				//printf("\n");*/
+				//TESForm* form = (TESForm*)ptr;
+				//printf("%u %x\n", form->formType, form->formID);
+
+				/*UInt64* arr = (UInt64*)ptr;
+
+				for (int j = 0; j < 10; j++)
+				{
+					ptr = (UInt8*)arr[j];
+
+					for (int i = 199; i >= 0; i--)
+					{
+						printf("%02X", ptr[i]);
+					}
+					printf("\n");
+				}*/
+
+				/*tArray<TESForm*>& arr = *(tArray<TESForm*>*)((UInt8*)&quest->unk0F8[0] + 128);
+				printf("%p\n", &arr);
+				printf("%p %u %u\n", arr.entries, arr.capacity, arr.count);
+
+				for (UInt32 i = 0; i < arr.count; i++)
+				{
+					printf("%p\n", arr[i]);
+				}*/
+
+
+				//UInt32 N1[]{ 291, 243, 195, 131, 99, 35, 19 };
+
+				//for (UInt32 n : N1)
+				//{
+				//	UInt8* ptr = *(UInt8**)((UInt8*)&quest->unk38[0] + (355 - n) / 2);
+				//	printf("%p\n", ptr);
+				//	if (!ptr)
+				//	{
+				//		continue;
+				//	}
+				//	//TESForm* form = (TESForm*)ptr;
+				//	//printf("%u %x\n", form->formType, form->formID);
+				//	for (int i = 199; i >= 0; i--)
+				//	{
+				//		printf("%02X", ptr[i]);
+				//	}
+				//	printf("\n");
+				//	for (int i = 0; i < 200; i++)
+				//	{
+				//		printf("%c", ptr[i]);
+				//	}
+				//	printf("\n");
+				//}
+
+				//printf("----------\n");
+
+				//UInt32 N2[]{ 883, 867, 819, 803, 755, 739, 659, 595 };
+
+				//for (UInt32 n : N2)
+				//{
+				//	UInt8* ptr = *(UInt8**)((UInt8*)&quest->unk0F8[0] + (995 - n) / 2);
+				//	printf("%p\n", ptr);
+				//	if (!ptr)
+				//	{
+				//		continue;
+				//	}
+				//	for (int i = 199; i >= 0; i--)
+				//	{
+				//		printf("%02X", ptr[i]);
+				//	}
+				//	printf("\n");
+				//	for (int i = 0; i < 200; i++)
+				//	{
+				//		printf("%c", ptr[i]);
+				//	}
+				//	printf("\n");
+				//}
+
+				//UInt32 N1[]{ 195, 131 };
+
+				//for (UInt32 n : N1)
+				//{
+				//	UInt8* ptr = *****(UInt8******)((UInt8*)&quest->unk38[0] + (355 - n) / 2);
+				//	printf("%p\n", ptr);
+				//	if (!ptr)
+				//	{
+				//		continue;
+				//	}
+				//	//TESForm* form = (TESForm*)ptr;
+				//	//printf("%u %x\n", form->formType, form->formID);
+				//	for (int i = 199; i >= 0; i--)
+				//	{
+				//		printf("%02X", ptr[i]);
+				//	}
+				//	printf("\n");
+				//	for (int i = 0; i < 200; i++)
+				//	{
+				//		printf("%c", ptr[i]);
+				//	}
+				//	printf("\n");
+				//}
+
+				//printf("----------\n");
+
+				//UInt32 N2[]{ 883, 819, 755, 659, 595 };
+
+				//for (UInt32 n : N2)
+				//{
+				//	UInt8* ptr = *****(UInt8******)((UInt8*)&quest->unk0F8[0] + (995 - n) / 2);
+				//	printf("%p\n", ptr);
+				//	if (!ptr)
+				//	{
+				//		continue;
+				//	}
+				//	for (int i = 199; i >= 0; i--)
+				//	{
+				//		printf("%02X", ptr[i]);
+				//	}
+				//	printf("\n");
+				//	for (int i = 0; i < 200; i++)
+				//	{
+				//		printf("%c", ptr[i]);
+				//	}
+				//	printf("\n");
+				//}
 			}
-			}
-		});
+		}
+
+		case F4SEMessagingInterface::kMessage_PostLoadGame:
+		{
+			struct OnTick : public IF4SEDelayFunctor
+			{
+				OnTick()
+				{
+
+				}
+
+				const char* ClassName() const override
+				{
+					return "F4MP";
+				}
+
+				UInt32 ClassVersion() const override
+				{
+					return 1;
+				}
+
+				bool Save(const F4SESerializationInterface* intfc) override
+				{
+					return true;
+				}
+
+				bool Load(const F4SESerializationInterface* intfc, UInt32 version) override
+				{
+					return true;
+				}
+
+				bool Run(VMValue& resultOut) override
+				{
+					F4MP& f4mp = F4MP::GetInstance();
+
+					librg_entity_iterate(&f4mp.ctx, LIBRG_ENTITY_ALIVE, [](librg_ctx* ctx, librg_entity* entity)
+						{
+							Entity::Get(entity)->OnTick();
+						});
+
+					return true;
+				}
+
+				bool ShouldReschedule(SInt32& delayMSOut) override
+				{
+					delayMSOut = 1;
+					return true;
+				}
+
+				bool ShouldResumeStack(UInt32& stackIdOut) override
+				{
+					return false;
+				}
+			};
+
+			GetInstance().object->GetDelayFunctorManager().Enqueue(new OnTick());
+			break;
+		}
+		}
+	});
+
 
 	return true;
 }
@@ -631,6 +1022,84 @@ void f4mp::F4MP::OnRemoveBuilding(librg_message* msg)
 	}
 }
 
+void f4mp::F4MP::OnSpeak(librg_message* msg)
+{
+	F4MP& self = GetInstance();
+
+	class Topic : public TESForm
+	{
+	public:
+		enum { kTypeID = kFormType_DIAL };
+	};
+
+	SpeakData data;
+	librg_data_rptr(msg->data, &data, sizeof(SpeakData));
+
+	static Topic* createdTopic = nullptr;
+	if (!createdTopic)
+	{
+		createdTopic = static_cast<Topic*>(Runtime_DynamicCast(IFormFactory::GetFactoryForType(kFormType_DIAL)->Create(), RTTI_TESForm, RTTI_TESTopic));
+		Topic* templateTopic = static_cast<Topic*>(Runtime_DynamicCast(LookupFormByID(0x0022FA98), RTTI_TESForm, RTTI_TESTopic));
+
+		memcpy((UInt8*)createdTopic + sizeof(TESForm), (UInt8*)templateTopic + sizeof(TESForm), 88);
+
+		UInt8* ptr = (UInt8*)createdTopic;
+		TESForm**& infos = *(TESForm***)(ptr + sizeof(TESForm) + 48);
+		UInt32& count1 = *(UInt32*)(ptr + sizeof(TESForm) + 64);
+		UInt32& count2 = *(UInt32*)(ptr + sizeof(TESForm) + 68);
+		infos = new TESForm * [1];
+		count1 = count2 = 1;
+	}
+
+	TESObjectREFR* speaker = nullptr;
+	if (data.speakerFormID == 0x0)
+	{
+		speaker = Entity::GetAs<Player>(self.FetchEntity(data.clientEntityID))->GetRef();
+	}
+	else
+	{
+		speaker = DYNAMIC_CAST(LookupFormByID(data.speakerFormID), TESForm, TESObjectREFR);
+	}
+
+	if (!speaker)
+	{
+		return;
+	}
+
+	TESForm* topicInfo = LookupFormByID(data.topicInfoFormID);
+	if (!topicInfo)
+	{
+		return;
+	}
+
+	Topic* topic = createdTopic;
+	Actor* actor = nullptr;
+	bool inHead = false;
+	TESObjectREFR* target = nullptr;
+
+	UInt8* ptr = (UInt8*)createdTopic;
+	TESForm**& infos = *(TESForm***)(ptr + sizeof(TESForm) + 48);
+	infos[0] = topicInfo;
+
+	VMVariable topicVar, actorVar, inHeadVar, targetVar;
+	topicVar.Set(&topic);
+	actorVar.Set(&actor);
+	inHeadVar.Set(&inHead);
+	targetVar.Set(&target);
+
+	VMArray<VMVariable> args;
+	args.Push(&topicVar);
+	args.Push(&actorVar);
+	args.Push(&inHeadVar);
+	args.Push(&targetVar);
+
+	CallFunctionNoWait(speaker, "Say", args);
+
+	self.linesToSpeak[speaker->formID].insert(topicInfo->formID);
+
+	printf("topic info: %X / speaker: %X / client: %u\n", topicInfo->formID, speaker->formID, data.clientEntityID);
+}
+
 UInt32 f4mp::F4MP::GetClientInstanceID(StaticFunctionTag* base)
 {
 	return activeInstance;
@@ -662,6 +1131,98 @@ bool f4mp::F4MP::Connect(StaticFunctionTag* base, Actor* player, TESNPC* playerA
 		_ERROR("failed to connect to the server!");
 		return false;
 	}
+
+	static std::vector<TESForm*> topicInfos;
+	if (topicInfos.size() == 0)
+	{
+		for (UInt32& topicInfoID : topicInfoIDs)
+		{
+			switch (topicInfoID)
+			{
+			case 1749611: // 536
+			case 1749606: // 176
+			case 1731234: // 89
+			case 1748309: // 63
+			case 1753049: // 59
+			case 1703050: // 50
+			case 1632496: // 49
+			case 1731236: // 49
+			case 1748306: // 48
+			case 1632495: // 48
+			case 1748307: // 47
+			case 1748305: // 46
+			case 1707292: // 46
+			case 1748311: // 45
+			case 1753796: // 45
+			case 1731235: // 44
+			case 247304: // 44
+			case 1707291: // 44
+			case 1731233: // 44
+			case 1748308: // 41
+			case 275332: // 22
+			case 719093: // 21
+			case 1653468: // 20
+			case 275333: // 20
+			case 920523: // 20
+			case 1653469: // 20
+			case 920519: // 19
+			case 920525: // 19
+			case 275331: // 19
+			case 719091: // 19
+			case 920521: // 19
+			case 1653466: // 19
+			case 920522: // 19
+			case 920520: // 18
+			case 275328: // 18
+			case 920518: // 18
+			case 1653467: // 18
+			case 920517: // 18
+			case 920524: // 18
+			case 719092: // 17
+			case 275329: // 15
+			case 1910882: // 14
+			case 1910881: // 13
+			case 275327: // 13
+			case 275330: // 12
+			case 1001471: // 8
+			case 172434: // 8
+			case 172433: // 8
+			case 1001468: // 7
+			case 1001469: // 7
+			case 1001470: // 7
+			case 1001467: // 7
+			case 0x1651EB:
+			case 0xE7513:
+			case 0x1651EF:
+			case 0x144F58:
+			case 0x1651F5:
+			case 0xE7517:
+			case 0xE6F65:
+			case 0x1651EE:
+			case 0x1651F1:
+			case 0x144F38:
+				continue;
+			}
+
+			TESForm* topicInfo = (TESForm*)Runtime_DynamicCast(LookupFormByID(topicInfoID), RTTI_TESForm, RTTI_TESTopicInfo);
+			if (!topicInfo)
+			{
+				continue;
+			}
+
+			topicInfos.push_back(topicInfo);
+		}
+
+		printf("%llu %llu\n", sizeof(topicInfoIDs) / sizeof(UInt32), topicInfos.size());
+	}
+
+	VMArray<TESForm*> topicInfoArray(topicInfos);
+
+	GetInstance().papyrus->GetExternalEventRegistrations("OnTopicInfoRegister", &topicInfoArray, [](UInt64 handle, const char* scriptName, const char* callbackName, void* dataPtr)
+		{
+			VMArray<TESForm*>* topicInfos = (VMArray<TESForm*>*)dataPtr;
+			SendPapyrusEvent1(handle, scriptName, callbackName, *topicInfos);
+		});
 
 	return true;
 }

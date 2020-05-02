@@ -70,6 +70,8 @@ namespace f4mp
 		std::unordered_map<UInt64, TransformData> buildings;
 		std::unordered_set<UInt32> knownBuildings;
 		
+		std::unordered_map<UInt32, std::unordered_set<UInt32>> linesToSpeak;
+
 		static void OnConnectRequest(librg_event* event);
 		static void OnConnectAccept(librg_event* event);
 		static void OnConnectRefuse(librg_event* event);
@@ -88,7 +90,8 @@ namespace f4mp
 		static void OnSyncEntity(librg_message* msg);
 		static void OnSpawnBuilding(librg_message* msg);
 		static void OnRemoveBuilding(librg_message* msg);
-		
+		static void OnSpeak(librg_message* msg);
+
 		static UInt32 GetClientInstanceID(StaticFunctionTag* base);
 		static void SetClient(StaticFunctionTag* base, UInt32 instance);
 
