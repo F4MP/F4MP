@@ -134,6 +134,8 @@ Topic Property myTopic Auto
 
 Event OnKeyDown(int keyCode)
 	If keyCode == 112
+		RegisterForExternalEvent("OnTopicInfoRegister", "OnTopicInfoRegister")
+		
 		Connect("", 7779)
 
 		playerIDs = new int[0]
@@ -154,8 +156,6 @@ Event OnKeyDown(int keyCode)
 		RegisterForExternalEvent("OnEntityRemove", "OnEntityRemove")
 
 		RegisterForExternalEvent("OnPlayerHit", "OnPlayerHit")
-
-		RegisterForExternalEvent("OnTopicInfoRegister", "OnTopicInfoRegister")
 
 		RegisterForKey(113)
 		RegisterForKey(114)

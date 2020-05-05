@@ -206,10 +206,11 @@ bool f4mp::F4MP::Init(const F4SEInterface* f4se)
 						return;
 					}*/
 
-					std::unordered_set<UInt32>& linesToSpeak = GetInstance().linesToSpeak[speaker->formID];
+					std::unordered_multiset<UInt32>& linesToSpeak = GetInstance().linesToSpeak[speaker->formID];
 					if (linesToSpeak.count(topicInfo->formID) > 0)
 					{
 						linesToSpeak.erase(topicInfo->formID);
+						return;
 					}
 
 					BSFixedString name = [](TESForm* baseForm, ExtraDataList* extraDataList)
@@ -236,7 +237,7 @@ bool f4mp::F4MP::Init(const F4SEInterface* f4se)
 
 						return BSFixedString();
 					}(speaker->baseForm, speaker->extraDataList);
-					printf("topic info: %X / speaker: %s\n", topicInfo->formID, name.c_str());
+					printf("topic info: %X / speaker: %X(%s)\n", topicInfo->formID, speaker->formID, name.c_str());
 
 					F4MP& self = GetInstance();
 
@@ -636,12 +637,12 @@ bool f4mp::F4MP::Init(const F4SEInterface* f4se)
 
 				bool Save(const F4SESerializationInterface* intfc) override
 				{
-					return true;
+					return false;
 				}
 
 				bool Load(const F4SESerializationInterface* intfc, UInt32 version) override
 				{
-					return true;
+					return false;
 				}
 
 				bool Run(VMValue& resultOut) override

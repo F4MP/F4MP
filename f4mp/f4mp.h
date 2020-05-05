@@ -70,7 +70,7 @@ namespace f4mp
 		std::unordered_map<UInt64, TransformData> buildings;
 		std::unordered_set<UInt32> knownBuildings;
 		
-		std::unordered_map<UInt32, std::unordered_set<UInt32>> linesToSpeak;
+		std::unordered_map<UInt32, std::unordered_multiset<UInt32>> linesToSpeak;
 
 		static void OnConnectRequest(librg_event* event);
 		static void OnConnectAccept(librg_event* event);
