@@ -2,5 +2,5 @@
 
 namespace f4mp
 {
-	extern UInt32 topicInfoIDs[67704];
+	extern UInt32 topicInfoIDs[68227];
 }

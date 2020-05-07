@@ -20,6 +20,12 @@ namespace f4mp
 		zpl_vec3 angles;
 	};
 
+	class Topic : public TESForm
+	{
+	public:
+		enum { kTypeID = kFormType_DIAL };
+	};
+
 	class F4MP
 	{
 		friend class Entity;
@@ -71,6 +77,8 @@ namespace f4mp
 		std::unordered_set<UInt32> knownBuildings;
 		
 		std::unordered_map<UInt32, std::unordered_multiset<UInt32>> linesToSpeak;
+
+		Topic* topicInstance;
 
 		static void OnConnectRequest(librg_event* event);
 		static void OnConnectAccept(librg_event* event);
