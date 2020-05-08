@@ -457,28 +457,204 @@ bool f4mp::F4MP::Init(const F4SEInterface* f4se)
 			//	eventDispatcher->AddEventSink(new Sink(i));
 			//}
 
-			/*tArray<TESForm*>& quests = (*g_dataHandler)->arrQUST;
+			//tArray<TESForm*>& quests = (*g_dataHandler)->arrQUST;
+			//printf("quests: %u\n", quests.count);
 
-			for (UInt32 i = 0; i < 2; i++)
-			{
-				TESQuest* quest = DYNAMIC_CAST(quests[i], TESForm, TESQuest);
-				if (!quest)
-				{
-					continue;
-				}
+			//std::unordered_map<UInt32, TESForm*> infos;
 
-				for (UInt8* ptr = (UInt8*)&quest->unk38[((0xF0 - 0x38) >> 3) - 1]; ptr >= (UInt8*)&quest->unk38[0]; ptr--)
-				{
-					printf("%02X", *ptr);
-				}
-				printf("\n");
+			//for (UInt32 i = 0; i < quests.count; i++)
+			//{
+			//	TESQuest* quest = DYNAMIC_CAST(quests[i], TESForm, TESQuest);
+			//	if (!quest)
+			//	{
+			//		continue;
+			//	}
 
-				for (UInt8* ptr = (UInt8*)&quest->unk0F8[((0x2F0 - 0xF8) >> 3) - 1]; ptr >= (UInt8*)&quest->unk0F8[0]; ptr--)
-				{
-					printf("%02X", *ptr);
-				}
-				printf("\n");
-			}*/
+			//	UInt8* ptr = (UInt8*)quest->unk0F8;
+
+			//	{
+			//		UInt32 count1 = *(UInt32*)(ptr + 228);
+			//		UInt32 count2 = *(UInt32*)(ptr + 232);
+			//		UInt32 count3 = *(UInt32*)(ptr + 236);
+			//		TESForm** arr = *(TESForm***)(ptr + 256);
+			//		if (arr)
+			//		{
+			//			printf("%u %u %u\n", count1, count2, count3);
+			//			printf("%u %p %p\n", count1 - count2, arr, *(UInt8**)(ptr + 256 - 16));
+
+			//			UInt8* ptr2 = *(UInt8**)(ptr + 256);
+			//			for (int j = 199; j >= 0; j--)
+			//			{
+			//				printf("%02X", ptr2[j]);
+			//			}
+			//			printf("\n");
+			//		}
+			//	}
+
+			//	{
+			//		UInt32 count1 = *(UInt32*)(ptr + 180);
+			//		UInt32 count2 = *(UInt32*)(ptr + 184);
+			//		UInt32 count3 = *(UInt32*)(ptr + 188);
+			//		TESForm** arr = *(TESForm***)(ptr + 208);
+			//		if (arr)
+			//		{
+			//			printf("%u %u %u\n", count1, count2, count3);
+			//			printf("%u %p %p\n", count1 - count2, arr, *(UInt8**)(ptr + 208 - 16));
+
+			//			//if (*(*(UInt8***)(ptr + 208) + 2))
+			//			{
+			//				UInt8* ptr2 = *(UInt8**)(ptr + 208);
+			//				for (int j = 199; j >= 0; j--)
+			//				{
+			//					printf("%02X", ptr2[j]);
+			//				}
+			//				printf("\n");
+
+			//				if (*(UInt8**)ptr2)
+			//				{
+			//					ptr2 = **(UInt8***)(ptr + 208);
+			//					for (int j = 199; j >= 0; j--)
+			//					{
+			//						printf("%02X", ptr2[j]);
+			//					}
+			//					printf("\n");
+			//				}
+
+			//				/*TESForm* form = **(TESForm***)(ptr + 208);
+			//				printf("!!!!! %X %u\n", form->formID, form->formType);*/
+			//			}
+			//		}
+			//	}
+
+			//	//printf("%u %p\n", count1 - count2, arr);
+
+			//	// combat
+			//	tArray<Topic*>* topics = (tArray<Topic*>*)(ptr + 288);
+
+			//	if (topics->count > 0)
+			//	{
+			//		for (UInt32 j = 0; j < topics->count; j++)
+			//		{
+			//			printf("%u ", topics->entries[j]->count);
+			//			for (UInt32 k = 0; k < topics->entries[j]->count; k++)
+			//			{
+			//				infos[topics->entries[j]->infos[k]->formID] = topics->entries[j]->infos[k];
+			//			}
+			//		}
+			//		printf("\n");
+			//	}
+
+			//	// favors
+			//	topics = (tArray<Topic*>*)(ptr + 312);
+
+			//	if (topics->count > 0)
+			//	{
+			//		for (UInt32 j = 0; j < topics->count; j++)
+			//		{
+			//			printf("%u ", topics->entries[j]->count);
+			//			for (UInt32 k = 0; k < topics->entries[j]->count; k++)
+			//			{
+			//				infos[topics->entries[j]->infos[k]->formID] = topics->entries[j]->infos[k];
+			//			}
+			//		}
+			//		printf("\n");
+			//	}
+
+			//	// detection
+			//	topics = (tArray<Topic*>*)(ptr + 336);
+
+			//	if (topics->count > 0)
+			//	{
+			//		for (UInt32 j = 0; j < topics->count; j++)
+			//		{
+			//			printf("%u ", topics->entries[j]->count);
+			//			for (UInt32 k = 0; k < topics->entries[j]->count; k++)
+			//			{
+			//				infos[topics->entries[j]->infos[k]->formID] = topics->entries[j]->infos[k];
+			//			}
+			//		}
+			//		printf("\n");
+			//	}
+
+			//	// service
+			//	topics = (tArray<Topic*>*)(ptr + 360);
+
+			//	if (topics->count > 0)
+			//	{
+			//		for (UInt32 j = 0; j < topics->count; j++)
+			//		{
+			//			printf("%u ", topics->entries[j]->count);
+			//			for (UInt32 k = 0; k < topics->entries[j]->count; k++)
+			//			{
+			//				infos[topics->entries[j]->infos[k]->formID] = topics->entries[j]->infos[k];
+			//			}
+			//		}
+			//		printf("\n");
+			//	}
+
+			//	// misc
+			//	topics = (tArray<Topic*>*)(ptr + 384);
+
+			//	if (topics->count > 0)
+			//	{
+			//		for (UInt32 j = 0; j < topics->count; j++)
+			//		{
+			//			printf("%u ", topics->entries[j]->count);
+			//			for (UInt32 k = 0; k < topics->entries[j]->count; k++)
+			//			{
+			//				infos[topics->entries[j]->infos[k]->formID] = topics->entries[j]->infos[k];
+			//			}
+			//		}
+			//		printf("\n");
+			//	}
+
+			//	// ??
+			//	tArray<void*>& arr = *(tArray<void*>*)(ptr + 408);
+
+			//	if (arr.count > 0)
+			//	{
+			//		printf("%u %u %p\n", arr.count, arr.capacity, arr.entries);
+
+			//		for (UInt32 j = 0; j < arr.count; j++)
+			//		{
+			//			/*UInt8* ptr2 = *(UInt8**)arr[j];
+			//			for (int k = 199; k >= 0; k--)
+			//			{
+			//				printf("%02X", ptr2[k]);
+			//			}
+			//			printf("\n");*/
+			//			printf("%p ", arr[j]);
+			//		}
+			//		printf("\n");
+			//	}
+			//}
+
+			//printf("infos: %llu\n", infos.size());
+
+			//for (UInt32 i = quests.count - 1; i < quests.count; i++)
+			//{
+			//	TESQuest* quest = DYNAMIC_CAST(quests[i], TESForm, TESQuest);
+			//	if (!quest)
+			//	{
+			//		continue;
+			//	}
+
+			//	printf("%08X\n", quest->formID);
+
+			//	for (UInt8* ptr = (UInt8*)&quest->unk38[((0xF0 - 0x38) >> 3) - 1]; ptr >= (UInt8*)&quest->unk38[0]; ptr--)
+			//	{
+			//		printf("%02X", *ptr);
+			//	}
+			//	printf("\n");
+
+			//	printf("%08X\n", quest->unkF0);
+
+			//	for (UInt8* ptr = (UInt8*)&quest->unk0F8[((0x2F0 - 0xF8) >> 3) - 1]; ptr >= (UInt8*)&quest->unk0F8[0]; ptr--)
+			//	{
+			//		printf("%02X", *ptr);
+			//	}
+			//	printf("\n");
+			//}
 
 			TESQuest* quest = DYNAMIC_CAST(LookupFormByID(0x0005DEE4), TESForm, TESQuest);
 			if (quest)

@@ -24,6 +24,17 @@ namespace f4mp
 	{
 	public:
 		enum { kTypeID = kFormType_DIAL };
+
+		UInt8 unkTopic1[48];
+		
+		TESForm** infos;
+
+		UInt8 unkTopic2[8];
+
+		UInt32 count;
+		UInt32 count2;
+
+		UInt8 unkTopic3[16];
 	};
 
 	class F4MP
