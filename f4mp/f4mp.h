@@ -11,6 +11,8 @@
 #include <algorithm>
 #include <atomic>
 
+// TODO: completely separate static functions and member variable access with instance function copies of them.
+
 namespace f4mp
 {
 	struct SyncDataForPapyrus
@@ -46,6 +48,8 @@ namespace f4mp
 
 	public:
 		static F4MP& GetInstance();
+
+		static std::string GetPath();
 
 		F4MP();
 
@@ -88,6 +92,8 @@ namespace f4mp
 		std::unordered_set<UInt32> knownBuildings;
 		
 		std::unordered_map<UInt32, std::unordered_multiset<UInt32>> linesToSpeak;
+
+		std::list<UInt32> topicInfoRemainders;
 
 		Topic* topicInstance;
 

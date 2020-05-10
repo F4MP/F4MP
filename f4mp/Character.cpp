@@ -9,6 +9,11 @@ f4mp::Character::Character()
 
 }
 
+f4mp::Animation& f4mp::Character::GetAnimation() const
+{
+	return *animation;
+}
+
 void f4mp::Character::OnEntityUpdate(librg_event* event)
 {
 	Entity::OnEntityUpdate(event, F4MP::GetInstance().player.get() != this);
@@ -100,13 +105,13 @@ void f4mp::Character::OnClientUpdate(librg_event* event)
 						return false;
 					}
 
-					UInt32 index = animation->GetNodeIndex(node->m_name.c_str());
-					if (index >= animation->GetAnimatedNodeCount())
+					UInt32 nodeIndex = animation->GetNodeIndex(node->m_name.c_str());
+					if (nodeIndex >= animation->GetAnimatedNodeCount())
 					{
 						return false;
 					}
 
-					index *= 8;
+					UInt32 index = nodeIndex * 8;
 
 					const NiMatrix43 rot = node->m_localTransform.rot;
 					zpl_mat4 mat

@@ -67,9 +67,6 @@ Function RegisterTopicInfos(Form[] targets)
 		RegisterForRemoteEvent(targets[i] as TopicInfo, "OnBegin")
 		i += 1
 	EndWhile
-	
-	Debug.Trace(targets.length + " topic infos have registered.")
-	Debug.Notification(targets.length + " topic infos have registered.")
 EndFunction
 
 Function OnTopicInfoRegister(Form[] targets)
@@ -80,6 +77,9 @@ Function OnTopicInfoRegister(Form[] targets)
 	topicInfosRegistered = true
 	
 	RegisterTopicInfos(targets)
+	
+	Debug.Trace(targets.length + " topic infos have registered.")
+	Debug.Notification(targets.length + " topic infos have registered.")
 EndFunction
 
 Event TopicInfo.OnBegin(TopicInfo akSender, ObjectReference akSpeakerRef, bool abHasBeenSaid)
@@ -135,6 +135,7 @@ Topic Property myTopic Auto
 Event OnKeyDown(int keyCode)
 	If keyCode == 112
 		RegisterForExternalEvent("OnTopicInfoRegister", "OnTopicInfoRegister")
+		RegisterForExternalEvent("OnAdditionalTopicInfoRegister", "RegisterTopicInfos")
 		
 		Connect("", 7779)
 

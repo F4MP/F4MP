@@ -33,6 +33,20 @@ f4mp::F4MP& f4mp::F4MP::GetInstance()
 	return *instances[activeInstance];
 }
 
+std::string f4mp::F4MP::GetPath()
+{
+	std::string path(MAX_PATH, '\0');
+
+	HRESULT err = SHGetFolderPath(NULL, CSIDL_MYDOCUMENTS | CSIDL_FLAG_CREATE, NULL, SHGFP_TYPE_CURRENT, &path[0]);
+	if (!SUCCEEDED(err))
+	{
+		_FATALERROR("SHGetFolderPath %08X failed (result = %08X lasterr = %08X)", CSIDL_MYDOCUMENTS, err, GetLastError());
+	}
+	ASSERT_CODE(SUCCEEDED(err), err);
+
+	return path.substr(0, path.find('\0')) + "\\My Games\\Fallout4\\F4MP\\";
+}
+
 f4mp::F4MP::F4MP() : ctx{}, port(0), handle(kPluginHandle_Invalid), messaging(nullptr), papyrus(nullptr), task(nullptr), topicInstance(nullptr)
 {
 	ctx.tick_delay = 10.0;
@@ -58,14 +72,7 @@ f4mp::F4MP::F4MP() : ctx{}, port(0), handle(kPluginHandle_Invalid), messaging(nu
 	librg_network_add(&ctx, MessageType::RemoveBuilding, OnRemoveBuilding);
 	librg_network_add(&ctx, MessageType::Speak, OnSpeak);
 
-	char	path[MAX_PATH];
-	HRESULT err = SHGetFolderPath(NULL, CSIDL_MYDOCUMENTS | CSIDL_FLAG_CREATE, NULL, SHGFP_TYPE_CURRENT, path);
-	if (!SUCCEEDED(err))
-	{
-		_FATALERROR("SHGetFolderPath %08X failed (result = %08X lasterr = %08X)", CSIDL_MYDOCUMENTS, err, GetLastError());
-	}
-	ASSERT_CODE(SUCCEEDED(err), err);
-	strcat_s(path, sizeof(path), "\\My Games\\Fallout4\\F4MP\\config.txt");
+	const std::string path = GetPath() + "config.txt";
 
 	std::ifstream configFile(path);
 	if (!configFile)
@@ -855,6 +862,144 @@ bool f4mp::F4MP::Init(const F4SEInterface* f4se)
 
 				bool Run(VMValue& resultOut) override
 				{
+					struct Transform
+					{
+						zpl_vec3 position;
+						zpl_quat rotation;
+						float scale;
+					};
+
+					struct Frame
+					{
+						std::vector<Transform> transforms;
+						double time;
+					};
+
+					static std::vector<Frame> frames;
+					static std::unique_ptr<Animation> animation = std::make_unique<Animation>(Animation::Human);
+
+					static bool enabled = false;
+					if (!enabled)
+					{
+						if (GetAsyncKeyState(VK_F2))
+						{
+							enabled = true;
+							frames.clear();
+						}
+					}
+					else
+					{
+						if (GetAsyncKeyState(VK_F3))
+						{
+							enabled = false;
+
+							std::vector<double> differences(frames.size());
+
+							for (size_t i = 0; i < frames.size(); i++)
+							{
+								double difference = 0.f;
+
+								for (size_t j = 1; j < frames[i].transforms.size(); j++)
+								{
+									const Transform& transform = frames[i].transforms[j];
+									const Transform& initialTransform = frames[0].transforms[j];
+									difference += zpl_vec3_mag(transform.position - initialTransform.position) - (zpl_quat_dot(transform.rotation, initialTransform.rotation) - 1.f) + abs(transform.scale - initialTransform.scale);
+								}
+
+								differences[i] = difference;
+							}
+
+							for (size_t i = 0; i < frames.size(); i++)
+							{
+								if (0 < i && i < frames.size() - 1)
+								{
+									if ((differences[i] - differences[i - 1]) * (differences[i + 1] - differences[i]) < 0)
+									{
+										const double threshold = 1.0;
+
+										if (differences[i] < threshold)
+										{
+											printf("> ");
+										}
+									}
+								}
+
+								printf("%llu: %f %f\n", i, frames[i].time, differences[i]);
+							}
+
+							std::ofstream file(GetPath() + "animation.txt");
+
+							printf("%s\n", (GetPath() + "animation.txt").c_str());
+
+							file << frames.size() << ' ' << animation->GetAnimatedNodeCount() - 1 << std::endl;
+
+							for (size_t i = 1; i < animation->GetAnimatedNodeCount(); i++)
+							{
+								file << animation->GetNodeName(i) << std::endl;
+							}
+
+							for (size_t frame = 0; frame < frames.size(); frame++)
+							{
+								file << frames[frame].time - frames[0].time << std::endl;
+
+								for (size_t node = 1; node < animation->GetAnimatedNodeCount(); node++)
+								{
+									const Transform& transform = frames[frame].transforms[node];
+									file << transform.position.x << ' ' << transform.position.y << ' ' << transform.position.z << ' ';
+									file << transform.rotation.x << ' ' << transform.rotation.y << ' ' << transform.rotation.z << ' ' << transform.rotation.w << ' ';
+									file << transform.scale << std::endl;
+								}
+							}
+						}
+
+						TESObjectREFR* ref = *g_player;
+						if (ref)
+						{
+							NiNode* root = ref->GetActorRootNode(false);
+							if (root)
+							{
+								frames.push_back(Frame());
+								Frame& frame = frames.back();
+								frame.time = zpl_time_now();
+								frame.transforms.resize(animation->GetAnimatedNodeCount());
+
+								root->Visit([&](NiAVObject* obj)
+									{
+										NiNode* node = dynamic_cast<NiNode*>(obj);
+										if (!node)
+										{
+											return false;
+										}
+
+										UInt32 nodeIndex = animation->GetNodeIndex(node->m_name.c_str());
+										if (nodeIndex >= animation->GetAnimatedNodeCount())
+										{
+											return false;
+										}
+
+										const NiMatrix43 rot = node->m_localTransform.rot;
+										zpl_mat4 mat
+										{
+											rot.data[0][0], rot.data[0][1], rot.data[0][2], rot.data[0][3],
+											rot.data[1][0], rot.data[1][1], rot.data[1][2], rot.data[1][3],
+											rot.data[2][0], rot.data[2][1], rot.data[2][2], rot.data[2][3],
+										};
+										zpl_quat quat;
+										zpl_quat_from_mat4(&quat, &mat);
+
+										quat *= zpl_sign(quat.w);
+
+										if (nodeIndex > 0)
+										{
+											frame.transforms[nodeIndex] = { (zpl_vec3&)node->m_localTransform.pos, quat, node->m_localTransform.scale };
+										}
+
+										return false;
+									});
+							}
+						}
+					}
+
 					F4MP& f4mp = F4MP::GetInstance();
 
 					librg_entity_iterate(&f4mp.ctx, LIBRG_ENTITY_ALIVE, [](librg_ctx* ctx, librg_entity* entity)
@@ -1334,6 +1479,8 @@ bool f4mp::F4MP::Connect(StaticFunctionTag* base, Actor* player, TESNPC* playerA
 		return false;
 	}
 
+	self.topicInfoRemainders.clear();
+
 	std::vector<TESForm*> topicInfos;
 
 	std::unordered_set<UInt32> existingTopicInfoIDs
@@ -1357,6 +1504,7 @@ bool f4mp::F4MP::Connect(StaticFunctionTag* base, Actor* player, TESNPC* playerA
 		TESForm* topicInfo = (TESForm*)Runtime_DynamicCast(LookupFormByID(topicInfoID), RTTI_TESForm, RTTI_TESTopicInfo);
 		if (!topicInfo)
 		{
+			self.topicInfoRemainders.push_back(topicInfoID);
 			//printf("%X ", topicInfoID);
 			continue;
 		}
@@ -1417,8 +1565,36 @@ bool f4mp::F4MP::Disconnect(StaticFunctionTag* base)
 
 void f4mp::F4MP::Tick(StaticFunctionTag* base)
 {
-	//F4MP& self = GetInstance();
+	F4MP& self = GetInstance();
 	//librg_tick(&self.ctx);
+
+	std::vector<TESForm*> newTopicInfos;
+
+	for (auto it = self.topicInfoRemainders.begin(); it != self.topicInfoRemainders.end();)
+	{
+		TESForm* topicInfo = (TESForm*)Runtime_DynamicCast(LookupFormByID(*it), RTTI_TESForm, RTTI_TESTopicInfo);
+		if (!topicInfo)
+		{
+			it++;
+			continue;
+		}
+
+		newTopicInfos.push_back(topicInfo);
+		it = self.topicInfoRemainders.erase(it);
+	}
+
+	if (newTopicInfos.size() > 0)
+	{
+		printf("new topic infos: %llu\n", newTopicInfos.size());
+
+		VMArray<TESForm*> topicInfoArray(newTopicInfos);
+
+		GetInstance().papyrus->GetExternalEventRegistrations("OnAdditionalTopicInfoRegister", &topicInfoArray, [](UInt64 handle, const char* scriptName, const char* callbackName, void* dataPtr)
+			{
+				VMArray<TESForm*>* topicInfos = (VMArray<TESForm*>*)dataPtr;
+				SendPapyrusEvent1(handle, scriptName, callbackName, *topicInfos);
+			});
+	}
 
 	for (auto& instance : instances)
 	{
@@ -1732,7 +1908,8 @@ BSFixedString f4mp::F4MP::GetEntVarAnim(StaticFunctionTag* base, UInt32 entityID
 
 VMArray<TESObjectREFR*> f4mp::F4MP::GetRefsInCell(StaticFunctionTag* base, TESObjectCELL* cell)
 {
-	return std::vector<TESObjectREFR*>(&cell->objectList.entries[0], &cell->objectList.entries[cell->objectList.count]);
+	auto refs = std::vector<TESObjectREFR*>(&cell->objectList.entries[0], &cell->objectList.entries[cell->objectList.count]);
+	return refs;
 }
 
 Float32 f4mp::F4MP::Atan2(StaticFunctionTag* base, Float32 y, Float32 x)

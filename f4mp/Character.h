@@ -31,6 +31,8 @@ namespace f4mp
 
 		Character();
 
+		Animation& GetAnimation() const;
+
 		void OnEntityUpdate(librg_event* event) override;
 
 		void OnClientUpdate(librg_event* event) override;
