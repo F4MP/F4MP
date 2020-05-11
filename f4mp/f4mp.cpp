@@ -286,7 +286,7 @@ bool f4mp::F4MP::Init(const F4SEInterface* f4se)
 		return false;
 	}
 
-	Animation::Init();
+	Animator::Init();
 
 	messaging->RegisterListener(handle, "F4SE", [](F4SEMessagingInterface::Message* msg)
 	{
@@ -862,56 +862,56 @@ bool f4mp::F4MP::Init(const F4SEInterface* f4se)
 
 				bool Run(VMValue& resultOut) override
 				{
-					struct Transform
-					{
-						zpl_vec3 position;
-						zpl_quat rotation;
-						float scale;
-					};
-
-					struct Frame
-					{
-						std::vector<Transform> transforms;
-						double time;
-					};
-
-					static std::vector<Frame> frames;
-					static std::unique_ptr<Animation> animation = std::make_unique<Animation>(Animation::Human);
+					static Animator animator(Animator::Human);
+					static Animator::Animation animation;
 
 					static bool enabled = false;
 					if (!enabled)
 					{
-						if (GetAsyncKeyState(VK_F2))
+						if (GetAsyncKeyState(VK_F3))
 						{
 							enabled = true;
-							frames.clear();
+
+							animation = Animator::Animation();
+							
+							for (UInt32 node = 1; node < animator.GetAnimatedNodeCount(); node++)
+							{
+								animation.nodes.push_back(node);
+							}
 						}
 					}
 					else
 					{
-						if (GetAsyncKeyState(VK_F3))
+						if (GetAsyncKeyState(VK_F4))
 						{
 							enabled = false;
 
-							std::vector<double> differences(frames.size());
+							animation.frames.pop_back();
 
-							for (size_t i = 0; i < frames.size(); i++)
+							auto getDifference = [&](size_t referenceFrame, size_t frame)
 							{
 								double difference = 0.f;
 
-								for (size_t j = 1; j < frames[i].transforms.size(); j++)
+								for (size_t j = 0; j < animation.frames[frame].transforms.size(); j++)
 								{
-									const Transform& transform = frames[i].transforms[j];
-									const Transform& initialTransform = frames[0].transforms[j];
+									const Animator::Transform& transform = animation.frames[frame].transforms[j];
+									const Animator::Transform& initialTransform = animation.frames[referenceFrame].transforms[j];
 									difference += zpl_vec3_mag(transform.position - initialTransform.position) - (zpl_quat_dot(transform.rotation, initialTransform.rotation) - 1.f) + abs(transform.scale - initialTransform.scale);
 								}
 
-								differences[i] = difference;
+								return difference;
+							};
+
+							std::vector<double> differences(animation.frames.size());
+
+							for (size_t i = 0; i < animation.frames.size(); i++)
+							{
+								differences[i] = getDifference(i, 0);
 							}
 
-							for (size_t i = 0; i < frames.size(); i++)
+							for (size_t i = 0; i < animation.frames.size(); i++)
 							{
-								if (0 < i && i < frames.size() - 1)
+								if (0 < i && i < animation.frames.size() - 1)
 								{
 									if ((differences[i] - differences[i - 1]) * (differences[i + 1] - differences[i]) < 0)
 									{
@@ -924,78 +924,50 @@ bool f4mp::F4MP::Init(const F4SEInterface* f4se)
 									}
 								}
 
-								printf("%llu: %f %f\n", i, frames[i].time, differences[i]);
+								printf("%llu: %f %f\n", i, animation.frames[i].duration, differences[i]);
 							}
 
-							std::ofstream file(GetPath() + "animation.txt");
-
-							printf("%s\n", (GetPath() + "animation.txt").c_str());
-
-							file << frames.size() << ' ' << animation->GetAnimatedNodeCount() - 1 << std::endl;
-
-							for (size_t i = 1; i < animation->GetAnimatedNodeCount(); i++)
-							{
-								file << animation->GetNodeName(i) << std::endl;
-							}
-
-							for (size_t frame = 0; frame < frames.size(); frame++)
-							{
-								file << frames[frame].time - frames[0].time << std::endl;
-
-								for (size_t node = 1; node < animation->GetAnimatedNodeCount(); node++)
-								{
-									const Transform& transform = frames[frame].transforms[node];
-									file << transform.position.x << ' ' << transform.position.y << ' ' << transform.position.z << ' ';
-									file << transform.rotation.x << ' ' << transform.rotation.y << ' ' << transform.rotation.z << ' ' << transform.rotation.w << ' ';
-									file << transform.scale << std::endl;
-								}
-							}
+							animator.Save(GetPath() + "animation.txt", animation);
 						}
 
 						TESObjectREFR* ref = *g_player;
 						if (ref)
 						{
-							NiNode* root = ref->GetActorRootNode(false);
-							if (root)
+							if (animation.frames.size() > 0)
 							{
-								frames.push_back(Frame());
-								Frame& frame = frames.back();
-								frame.time = zpl_time_now();
-								frame.transforms.resize(animation->GetAnimatedNodeCount());
+								float& duration = animation.frames.back().duration;
+								duration = zpl_time_now() - duration;
+							}
 
-								root->Visit([&](NiAVObject* obj)
+							Animator::Frame frame;
+							frame.duration = zpl_time_now();
+							frame.transforms.resize(animation.nodes.size());
+
+							if (!animator.ForEachNode(ref, [&](NiNode* node, UInt32 nodeIndex)
+								{
+									if (nodeIndex == 0)
 									{
-										NiNode* node = dynamic_cast<NiNode*>(obj);
-										if (!node)
-										{
-											return false;
-										}
-
-										UInt32 nodeIndex = animation->GetNodeIndex(node->m_name.c_str());
-										if (nodeIndex >= animation->GetAnimatedNodeCount())
-										{
-											return false;
-										}
-
-										const NiMatrix43 rot = node->m_localTransform.rot;
-										zpl_mat4 mat
-										{
-											rot.data[0][0], rot.data[0][1], rot.data[0][2], rot.data[0][3],
-											rot.data[1][0], rot.data[1][1], rot.data[1][2], rot.data[1][3],
-											rot.data[2][0], rot.data[2][1], rot.data[2][2], rot.data[2][3],
-										};
-										zpl_quat quat;
-										zpl_quat_from_mat4(&quat, &mat);
-
-										quat *= zpl_sign(quat.w);
-
-										if (nodeIndex > 0)
-										{
-											frame.transforms[nodeIndex] = { (zpl_vec3&)node->m_localTransform.pos, quat, node->m_localTransform.scale };
-										}
-
 										return false;
-									});
+									}
+
+									const NiMatrix43 rot = node->m_localTransform.rot;
+									zpl_mat4 mat
+									{
+										rot.data[0][0], rot.data[0][1], rot.data[0][2], rot.data[0][3],
+										rot.data[1][0], rot.data[1][1], rot.data[1][2], rot.data[1][3],
+										rot.data[2][0], rot.data[2][1], rot.data[2][2], rot.data[2][3],
+									};
+									zpl_quat quat;
+									zpl_quat_from_mat4(&quat, &mat);
+
+									quat *= zpl_sign(quat.w);
+
+									frame.transforms[nodeIndex - 1] = { (zpl_vec3&)node->m_localTransform.pos, quat, node->m_localTransform.scale };
+
+									return false;
+								}))
+							{
+								animation.frames.push_back(frame);
 							}
 						}
 					}
@@ -1470,6 +1442,10 @@ bool f4mp::F4MP::Connect(StaticFunctionTag* base, Actor* player, TESNPC* playerA
 	self.player = std::make_unique<Player>();
 	self.player->OnConnect(player, playerActorBase);
 
+	// TODO: obviously temporary.
+	static Animator::Animation animation = self.player->GetAnimator().Load(GetPath() + "animation.txt");
+	self.player->GetAnimator().SetAnimation(&animation);
+
 	self.address = strlen(address.c_str()) > 0 ? address.c_str() : self.config.hostAddress;
 	self.port = port;
 
@@ -1900,7 +1876,7 @@ BSFixedString f4mp::F4MP::GetEntVarAnim(StaticFunctionTag* base, UInt32 entityID
 	Player* player = Entity::GetAs<Player>(self.FetchEntity(entityID));
 	if (!player)
 	{
-		return Animation::GetStateName(0).c_str();
+		return Animator::GetStateName(0).c_str();
 	}
 
 	return player->GetAnimState().c_str();
@@ -1937,7 +1913,7 @@ BSFixedString f4mp::F4MP::GetWalkDir(StaticFunctionTag* base, Float32 dX, Float3
 
 bool f4mp::F4MP::AnimLoops(StaticFunctionTag* base, BSFixedString animState)
 {
-	return Animation::Loops(Animation::GetStateID(animState.c_str()));
+	return Animator::Loops(Animator::GetStateID(animState.c_str()));
 }
 
 void f4mp::F4MP::CopyAppearance(StaticFunctionTag* base, TESNPC* src, TESNPC* dest)

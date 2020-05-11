@@ -2,8 +2,6 @@
 
 #include "Character.h"
 
-#include "Animation.h"
-
 #include <memory>
 
 namespace f4mp

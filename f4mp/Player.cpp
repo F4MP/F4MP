@@ -147,7 +147,7 @@ SInt32 f4mp::Player::GetAnimStateID() const
 
 const std::string& f4mp::Player::GetAnimState() const
 {
-	return Animation::GetStateName(GetAnimStateID());
+	return Animator::GetStateName(GetAnimStateID());
 }
 
 float f4mp::Player::GetLookAngle() const
@@ -162,7 +162,7 @@ void f4mp::Player::SetAnimStateID(SInt32 id)
 
 void f4mp::Player::SetAnimState(const std::string& name)
 {
-	SetAnimStateID(Animation::GetStateID(name));
+	SetAnimStateID(Animator::GetStateID(name));
 }
 
 UInt32 f4mp::Player::GetEntityID() const

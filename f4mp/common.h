@@ -172,7 +172,7 @@ namespace f4mp
 		{
 			//_MESSAGE("size: %u", values.size());
 
-			librg_data_wu32(data, values.size());
+			librg_data_wu32(data, static_cast<u32>(values.size()));
 
 			for (const T& value : values)
 			{
@@ -230,7 +230,7 @@ namespace f4mp
 		{
 			//_MESSAGE("%s", value.c_str());
 
-			librg_data_wu32(data, value.size());
+			librg_data_wu32(data, static_cast<u32>(value.size()));
 
 			for (char ch : value)
 			{

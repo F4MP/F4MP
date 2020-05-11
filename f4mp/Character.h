@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Entity.h"
-#include "Animation.h"
+#include "Animator.h"
 
 #include <memory>
 #include <atomic>
@@ -31,7 +31,7 @@ namespace f4mp
 
 		Character();
 
-		Animation& GetAnimation() const;
+		Animator& GetAnimator() const;
 
 		void OnEntityUpdate(librg_event* event) override;
 
@@ -40,7 +40,7 @@ namespace f4mp
 		void OnTick() override;
 
 	private:
-		std::unique_ptr<Animation> animation;
+		std::unique_ptr<Animator> animator;
 		
 		std::atomic_flag lock = ATOMIC_FLAG_INIT;
 		TransformBuffer transformBuffer;

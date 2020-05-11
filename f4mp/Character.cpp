@@ -5,13 +5,13 @@
 
 f4mp::Character::Character()
 {
-	animation = std::make_unique<Animation>(Animation::Human);
+	animator = std::make_unique<Animator>(Animator::Human);
 
 }
 
-f4mp::Animation& f4mp::Character::GetAnimation() const
+f4mp::Animator& f4mp::Character::GetAnimator() const
 {
-	return *animation;
+	return *animator;
 }
 
 void f4mp::Character::OnEntityUpdate(librg_event* event)
@@ -95,7 +95,7 @@ void f4mp::Character::OnClientUpdate(librg_event* event)
 		NiNode* root = ref->GetActorRootNode(false);
 		if (root)
 		{
-			transforms.resize(animation->GetAnimatedNodeCount() * 8);
+			transforms.resize(animator->GetAnimatedNodeCount() * 8);
 
 			root->Visit([&](NiAVObject* obj)
 				{
@@ -105,8 +105,8 @@ void f4mp::Character::OnClientUpdate(librg_event* event)
 						return false;
 					}
 
-					UInt32 nodeIndex = animation->GetNodeIndex(node->m_name.c_str());
-					if (nodeIndex >= animation->GetAnimatedNodeCount())
+					UInt32 nodeIndex = animator->GetNodeIndex(node->m_name.c_str());
+					if (nodeIndex >= animator->GetAnimatedNodeCount())
 					{
 						return false;
 					}
@@ -134,6 +134,30 @@ void f4mp::Character::OnClientUpdate(librg_event* event)
 
 					return false;
 				});
+
+			if (ref->GetObjectRootNode() != root)
+			{
+				// TODO: temporary
+				const Animator::Animation* animation = animator->GetAnimation();
+				if (animation)
+				{
+					std::vector<Animator::Transform> animationTransforms = animator->GetTransforms();
+
+					for (size_t i = 0; i < animationTransforms.size(); i++)
+					{
+						const Animator::Transform& transform = animationTransforms[i];
+						size_t index = animation->nodes[i] * 8;
+						transforms[index + 0] = transform.position.x;
+						transforms[index + 1] = transform.position.y;
+						transforms[index + 2] = transform.position.z;
+						transforms[index + 3] = transform.rotation.x;
+						transforms[index + 4] = transform.rotation.y;
+						transforms[index + 5] = transform.rotation.z;
+						transforms[index + 6] = transform.rotation.w;
+						transforms[index + 7] = transform.scale;
+					}
+				}
+			}
 		}
 	}
 
@@ -180,7 +204,7 @@ void f4mp::Character::OnTick()
 						return false;
 					}
 
-					UInt32 nodeIndex = animation->GetNodeIndex(node->m_name.c_str());
+					UInt32 nodeIndex = animator->GetNodeIndex(node->m_name.c_str());
 					if (nodeIndex >= transforms.prev.size())
 					{
 						return false;

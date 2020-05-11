@@ -72,9 +72,6 @@
     <ClCompile Include="..\f4se\GameRTTI.cpp">
       <Filter>f4se</Filter>
     </ClCompile>
-    <ClCompile Include="Animation.cpp">
-      <Filter>소스 파일</Filter>
-    </ClCompile>
     <ClCompile Include="Entity.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
@@ -103,6 +100,9 @@
       <Filter>f4se</Filter>
     </ClCompile>
     <ClCompile Include="TopicInfoIDs.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="Animator.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
   </ItemGroup>
@@ -139,9 +139,6 @@
     <ClInclude Include="Player.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="Animation.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
     <ClInclude Include="Entity.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
@@ -152,6 +149,9 @@
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="TopicInfoIDs.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Animator.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
   </ItemGroup>
