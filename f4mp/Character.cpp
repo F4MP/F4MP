@@ -9,7 +9,12 @@ f4mp::Character::Character()
 
 }
 
-f4mp::Animator& f4mp::Character::GetAnimator() const
+f4mp::Animator& f4mp::Character::GetAnimator()
+{
+	return *animator;
+}
+
+const f4mp::Animator& f4mp::Character::GetAnimator() const
 {
 	return *animator;
 }
@@ -146,7 +151,7 @@ void f4mp::Character::OnClientUpdate(librg_event* event)
 					for (size_t i = 0; i < animationTransforms.size(); i++)
 					{
 						const Animator::Transform& transform = animationTransforms[i];
-						size_t index = animation->nodes[i] * 8;
+						size_t index = animator->GetNodeIndex(animation->nodes[i]) * 8;
 						transforms[index + 0] = transform.position.x;
 						transforms[index + 1] = transform.position.y;
 						transforms[index + 2] = transform.position.z;

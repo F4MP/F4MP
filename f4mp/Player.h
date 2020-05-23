@@ -12,6 +12,7 @@ namespace f4mp
 		UInt32 entityID;
 
 		zpl_vec3 prevPosition;
+		zpl_vec3 displacement;
 
 		client::AppearanceData appearance;
 		client::WornItemsData wornItems;
@@ -53,6 +54,8 @@ namespace f4mp
 		const client::AppearanceData& GetAppearance() const;
 		const client::WornItemsData& GetWornItems() const;
 		
+		const zpl_vec3& GetDisplacement() const;
+
 		float GetLookAngle() const;
 	};
 }

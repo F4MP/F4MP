@@ -80,26 +80,32 @@ void f4mp::Player::OnClientUpdate(librg_event* event)
 {
 	Character::OnClientUpdate(event);
 
-	const std::string& animState = GetAnimState();
+	displacement = event->entity->position - prevPosition;
+
+	GetAnimator().OnClientUpdate(*this);
 
 	// TODO: move this to the Animation class.
 
-	zpl_vec2 displacement = event->entity->position.xy - prevPosition.xy;
+	const std::string& animState = GetAnimState();
 	const char* newAnimState;
 
-	switch (GetWalkDir(displacement, GetLookAngle()))
+	switch (GetWalkDir(displacement.xy, GetLookAngle()))
 	{
 	case 0:
 		newAnimState = "JogForward";
 		break;
 	case 1:
-		newAnimState = "JogBackward";
-		break;
 	case 2:
-		newAnimState = "JogLeft";
-		break;
 	case 3:
 		newAnimState = "JogRight";
+		break;
+	case 4:
+		newAnimState = "JogBackward";
+		break;
+	case 5:
+	case 6:
+	case 7:
+		newAnimState = "JogLeft";
 		break;
 	default:
 		newAnimState = "None";
@@ -180,6 +186,11 @@ const f4mp::client::WornItemsData& f4mp::Player::GetWornItems() const
 	return wornItems;
 }
 
+const zpl_vec3& f4mp::Player::GetDisplacement() const
+{
+	return displacement;
+}
+
 void f4mp::Player::OnConnectRequest(librg_event* event)
 {
 	Character::OnConnectRequest(event);
@@ -222,17 +233,10 @@ int f4mp::Player::GetWalkDir(const zpl_vec2& displacement, float lookAngle)
 		return -1;
 	}
 
-	const float pi = 3.14159265359f;
-	const float rad2deg = 180.f / pi, deg2rad = pi / 180.f;
-	lookAngle *= deg2rad;
-	zpl_vec2 lookDir{ sin(lookAngle), cos(lookAngle) };
-	zpl_vec2 moveDir = displacement / speed;
+	float angle = atan2(displacement.x, displacement.y) - zpl_to_radians(lookAngle) + ZPL_TAU / 16.f;
+	angle = angle - floor(angle / ZPL_TAU) * ZPL_TAU;
 
-	float dot = zpl_vec2_dot(lookDir, moveDir);
-	zpl_f32 cross;
-	zpl_vec2_cross(&cross, lookDir, moveDir);
-
-	return fabsf(dot) > cosf(45.f * deg2rad) ? (dot > 0.f ? 0 : 1) : (cross > 0.f ? 2 : 3);
+	return (int)floor(angle / ZPL_TAU * 8.f);
 }
 
 void f4mp::Player::SetAppearance(TESNPC* actorBase, const AppearanceData& appearance)

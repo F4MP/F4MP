@@ -876,7 +876,7 @@ bool f4mp::F4MP::Init(const F4SEInterface* f4se)
 							
 							for (UInt32 node = 1; node < animator.GetAnimatedNodeCount(); node++)
 							{
-								animation.nodes.push_back(node);
+								animation.nodes.push_back(animator.GetNodeName(node));
 							}
 						}
 					}
@@ -927,7 +927,16 @@ bool f4mp::F4MP::Init(const F4SEInterface* f4se)
 								printf("%llu: %f %f\n", i, animation.frames[i].duration, differences[i]);
 							}
 
-							animator.Save(GetPath() + "animation.txt", animation);
+							int name = 0;
+							std::ifstream tmp;
+
+							do
+							{
+								tmp.close();
+								tmp.open((GetPath() + std::to_string(++name) + ".txt").c_str());
+							} while (tmp.good());
+
+							animator.Save(GetPath() + std::to_string(name) + ".txt", animation);
 						}
 
 						TESObjectREFR* ref = *g_player;
@@ -1442,10 +1451,6 @@ bool f4mp::F4MP::Connect(StaticFunctionTag* base, Actor* player, TESNPC* playerA
 	self.player = std::make_unique<Player>();
 	self.player->OnConnect(player, playerActorBase);
 
-	// TODO: obviously temporary.
-	static Animator::Animation animation = self.player->GetAnimator().Load(GetPath() + "animation.txt");
-	self.player->GetAnimator().SetAnimation(&animation);
-
 	self.address = strlen(address.c_str()) > 0 ? address.c_str() : self.config.hostAddress;
 	self.port = port;
 
@@ -1901,11 +1906,19 @@ BSFixedString f4mp::F4MP::GetWalkDir(StaticFunctionTag* base, Float32 dX, Float3
 	case 0:
 		return "Forward";
 	case 1:
-		return "Backward";
+		return "ForwardRight";
 	case 2:
-		return "Left";
-	case 3:
 		return "Right";
+	case 3:
+		return "BackwardRight";
+	case 4:
+		return "Backward";
+	case 5:
+		return "BackwardLeft";
+	case 6:
+		return "Left";
+	case 7:
+		return "ForwardLeft";
 	default:
 		return "None";
 	}

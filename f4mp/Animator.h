@@ -4,6 +4,8 @@
 
 namespace f4mp
 {
+	class Player;
+
 	class Animator
 	{
 	public:
@@ -29,7 +31,7 @@ namespace f4mp
 		{
 			bool loops;
 			float duration;
-			std::vector<UInt32> nodes;
+			std::vector<std::string> nodes;
 			std::vector<Frame> frames;
 
 			Animation(float duration = 0.f);
@@ -42,13 +44,17 @@ namespace f4mp
 		static std::vector<std::string> stateNames;
 		static std::unordered_map<std::string, SInt32> stateIDs;
 
+		static std::unordered_map<std::string, Animation> animations;
+
 		Type type;
 
-		Animation* animation;
+		const Animation* animation;
 		double startTime;
 
 	public:
 		Animator(Type type);
+
+		void Play(const Animation* newAnimation);
 
 		size_t GetAnimatedNodeCount() const;
 
@@ -57,17 +63,20 @@ namespace f4mp
 		const std::string& GetNodeName(UInt32 nodeIndex) const;
 		UInt32 GetNodeIndex(const std::string& nodeName) const;
 
-		void SetAnimation(Animation* newAnimation);
 		const Animation* GetAnimation() const;
 
 		std::vector<Transform> GetTransforms() const;
 
 		bool ForEachNode(TESObjectREFR* ref, const std::function<bool(NiNode*, UInt32)>& callback);
 
-		bool Save(const std::string& path, const Animation& animation) const;
+		bool Save(const std::string& path, const Animation& animation, bool binary = true) const;
 		Animation Load(const std::string& path) const;
 
+		void OnClientUpdate(const Player& player);
+
 		static void Init();
+
+		static Animation Load(const UCHAR data[]);
 
 		static const std::string& GetStateName(SInt32 id);
 		static SInt32 GetStateID(const std::string& name);

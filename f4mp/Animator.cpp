@@ -1,4 +1,6 @@
 #include "Animator.h"
+#include "Animations.h"
+#include "Player.h"
 
 #include "f4se/NiNodes.h"
 
@@ -10,9 +12,17 @@ std::vector<std::unordered_map<std::string, UInt32>> f4mp::Animator::animatedNod
 std::vector<std::string> f4mp::Animator::stateNames;
 std::unordered_map<std::string, SInt32> f4mp::Animator::stateIDs;
 
+std::unordered_map<std::string, f4mp::Animator::Animation> f4mp::Animator::animations;
+
 f4mp::Animator::Animator(Type type) : type(type), startTime(zpl_time_now())
 {
+	Play(&animations["idle"]);
+}
 
+void f4mp::Animator::Play(const Animation* newAnimation)
+{
+	animation = newAnimation;
+	startTime = zpl_time_now();
 }
 
 size_t f4mp::Animator::GetAnimatedNodeCount() const
@@ -39,11 +49,6 @@ UInt32 f4mp::Animator::GetNodeIndex(const std::string& nodeName) const
 	}
 
 	return foundNode->second;
-}
-
-void f4mp::Animator::SetAnimation(Animation* newAnimation)
-{
-	animation = newAnimation;
 }
 
 const f4mp::Animator::Animation* f4mp::Animator::GetAnimation() const
@@ -123,7 +128,7 @@ bool f4mp::Animator::ForEachNode(TESObjectREFR* ref, const std::function<bool(Ni
 		});
 }
 
-bool f4mp::Animator::Save(const std::string& path, const Animation& animation) const
+bool f4mp::Animator::Save(const std::string& path, const Animation& animation, bool binary) const
 {
 	std::ofstream file(path);
 	if (!file)
@@ -131,22 +136,85 @@ bool f4mp::Animator::Save(const std::string& path, const Animation& animation) c
 		return false;
 	}
 
-	file << animation.loops << ' ' << animation.nodes.size() << ' ' << animation.frames.size() << std::endl;
+	std::vector<UCHAR> data;
 
-	for (UInt32 nodeIndex : animation.nodes)
+	if (binary)
 	{
-		file << GetNodeName(nodeIndex) << std::endl;
+		const size_t nodes = animation.nodes.size(), frames = animation.frames.size();
+		data.insert(data.end(), (UCHAR*)(&animation.loops), (UCHAR*)(&animation.loops + 1));
+		data.insert(data.end(), (UCHAR*)(&nodes), (UCHAR*)(&nodes + 1));
+		data.insert(data.end(), (UCHAR*)(&frames), (UCHAR*)(&frames + 1));
+	}
+	else
+	{
+		file << animation.loops << ' ' << animation.nodes.size() << ' ' << animation.frames.size() << std::endl;
+	}
+
+	for (const std::string& nodeName : animation.nodes)
+	{
+		if (binary)
+		{
+			const size_t length = nodeName.length();
+			data.insert(data.end(), (UCHAR*)(&length), (UCHAR*)(&length + 1));
+			data.insert(data.end(), (UCHAR*)(&nodeName[0]), (UCHAR*)(&nodeName[0] + length));
+		}
+		else
+		{
+			file << nodeName << ' ';
+		}
+	}
+
+	if (binary)
+	{
+		file << std::hex;
+
+		for (UCHAR byte : data)
+		{
+			file << "0x" << (UINT)byte << ", ";
+		}
+
+		data.clear();
+	}
+	else
+	{
+		file << std::endl;
 	}
 
 	for (const Frame& frame : animation.frames)
 	{
-		file << frame.duration << std::endl;
-		
+		if (binary)
+		{
+			data.insert(data.end(), (UCHAR*)(&frame.duration), (UCHAR*)(&frame.duration + 1));
+		}
+		else
+		{
+			file << frame.duration << ' ';
+		}
+
 		for (const Transform& transform : frame.transforms)
 		{
-			file << transform.position.x << ' ' << transform.position.y << ' ' << transform.position.z << std::endl;
-			file << transform.rotation.x << ' ' << transform.rotation.y << ' ' << transform.rotation.z << ' ' << transform.rotation.w << std::endl;
-			file << transform.scale << std::endl;
+			if (binary)
+			{
+				data.insert(data.end(), (UCHAR*)(&transform), (UCHAR*)(&transform + 1));
+			}
+			else
+			{
+				file << transform.position.x << ' ' << transform.position.y << ' ' << transform.position.z << ' ';
+				file << transform.rotation.x << ' ' << transform.rotation.y << ' ' << transform.rotation.z << ' ' << transform.rotation.w << ' ';
+				file << transform.scale << ' ';
+			}
+		}
+
+		file << std::endl;
+
+		if (binary)
+		{
+			for (UCHAR byte : data)
+			{
+				file << "0x" << (UINT)byte << ", ";
+			}
+
+			data.clear();
 		}
 	}
 
@@ -171,10 +239,9 @@ f4mp::Animator::Animation f4mp::Animator::Load(const std::string& path) const
 	animation.nodes.resize(nodes);
 	animation.frames.resize(frames);
 
-	for (UInt32& nodeIndex : animation.nodes)
+	for (std::string& nodeName : animation.nodes)
 	{
 		file >> nodeName;
-		nodeIndex = GetNodeIndex(nodeName);
 	}
 
 	for (Frame& frame : animation.frames)
@@ -195,8 +262,91 @@ f4mp::Animator::Animation f4mp::Animator::Load(const std::string& path) const
 	return animation;
 }
 
+void f4mp::Animator::OnClientUpdate(const Player& player)
+{
+	const Animation* newAnimation = &animations["idle"];
+
+	int walkDir = player.GetWalkDir(player.GetDisplacement().xy, player.GetLookAngle());
+	if (walkDir >= 0)
+	{
+		const Animation* walkAnimations[]
+		{
+			&animations["jog_forward"],
+			&animations["jog_forward_right"],
+			&animations["jog_right"],
+			&animations["jog_backward_right"],
+			&animations["jog_backward"],
+			&animations["jog_backward_left"],
+			&animations["jog_left"],
+			&animations["jog_forward_left"],
+		};
+		newAnimation = walkAnimations[walkDir];
+	}
+
+	if (animation != newAnimation)
+	{
+		Play(newAnimation);
+	}
+}
+
+f4mp::Animator::Animation f4mp::Animator::Load(const UCHAR data[])
+{
+	const UCHAR* curData = data;
+
+	Animation animation;
+
+	animation.loops = *(((const bool*&)curData)++);
+
+	const size_t nodes = *(((const size_t*&)curData)++), frames = *(((const size_t*&)curData)++);
+	animation.nodes.resize(nodes);
+	animation.frames.resize(frames);
+
+	for (std::string& nodeName : animation.nodes)
+	{
+		const size_t length = *(((const size_t*&)curData)++);
+		nodeName = std::string((const char*)curData, (const char*)curData + length);
+		curData += length;
+	}
+
+	size_t frameCount = 0;
+
+	for (Frame& frame : animation.frames)
+	{
+		frame.duration = *(((const float*&)curData)++);
+		if (frame.duration <= 0)
+		{
+			break;
+		}
+
+		animation.duration += frame.duration;
+
+		frame.transforms.resize(nodes);
+
+		for (Transform& transform : frame.transforms)
+		{
+			transform = *(((const Transform*&)curData)++);
+		}
+
+		frameCount++;
+	}
+
+	animation.frames.resize(frameCount);
+
+	return animation;
+}
+
 void f4mp::Animator::Init()
 {
+	animations["idle"] = Load(animations::idle);
+	animations["jog_forward"] = Load(animations::jogForward);
+	animations["jog_forward_left"] = Load(animations::jogForwardLeft);
+	animations["jog_forward_right"] = Load(animations::jogForwardRight);
+	animations["jog_backward"] = Load(animations::jogBackward);
+	animations["jog_backward_left"] = Load(animations::jogBackwardLeft);
+	animations["jog_backward_right"] = Load(animations::jogBackwardRight);
+	animations["jog_left"] = Load(animations::jogLeft);
+	animations["jog_right"] = Load(animations::jogRight);
+
 	if (stateNames.size() == 0)
 	{
 		animatedNodes =
