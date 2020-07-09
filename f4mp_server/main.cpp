@@ -11,12 +11,15 @@ f4mp::Server* f4mp::Server::instance = nullptr;
 int main()
 {
 	const std::string configFilePath = "server_config.txt";
+
 	std::string address;
+	i32 port = 7779;
 
 	std::ifstream config(configFilePath);
 	if (config)
 	{
 		config >> address;
+		config >> port;
 		config.close();
 	}
 	else
@@ -25,10 +28,17 @@ int main()
 		std::cin >> address;
 		
 		std::ofstream file(configFilePath);
-		file << address;
+		file << address << std::endl << port;
 	}
 
-    f4mp::Server* server = new f4mp::Server(address);
+    f4mp::Server* server = new f4mp::Server(address, port);
+
+	server->Start();
+
+	while (true)
+	{
+		server->Tick();
+	}
 
 	return 0;
 }

@@ -143,6 +143,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\f4mp\common.cpp" />
+    <ClCompile Include="api.cpp" />
     <ClCompile Include="Character.cpp" />
     <ClCompile Include="Entity.cpp" />
     <ClCompile Include="main.cpp" />
@@ -150,6 +151,7 @@
     <ClCompile Include="Player.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="api.h" />
     <ClInclude Include="Character.h" />
     <ClInclude Include="Entity.h" />
     <ClInclude Include="NPC.h" />

@@ -51,3 +51,5 @@ f4mp/scripts/.vscode/.ropeproject/config.py
 f4mp/scripts/.vscode/.ropeproject/objectdb
 f4mp/scripts/.vscode/settings.json
 f4mp/scripts/copy.bat
+
+f4mp_server/scripts/bin

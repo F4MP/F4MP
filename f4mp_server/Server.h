@@ -16,6 +16,11 @@ namespace f4mp
 	private:
 		static Server* instance;
 
+		std::string address;
+		i32 port;
+
+		librg_ctx ctx;
+
 		std::unordered_map<u32, u32> entityIDs;
 
 		std::unordered_map<u32, f64> entitiesSyncedTime;
@@ -250,13 +255,11 @@ namespace f4mp
 		}
 
 	public:
-		Server(const std::string& address)
+		Server(const std::string& address, i32 port) : address(address), port(port), ctx{}
 		{
 			instance = this;
 
 			librg_option_set(LIBRG_MAX_ENTITIES_PER_BRANCH, 4);
-
-			librg_ctx ctx = { 0 };
 
 			ctx.tick_delay = 10.0;
 			ctx.mode = LIBRG_MODE_SERVER;
@@ -286,26 +289,40 @@ namespace f4mp
 			librg_network_add(&ctx, MessageType::RemoveBuilding, OnRemoveBuilding);
 			librg_network_add(&ctx, MessageType::Speak, OnSpeak);
 
-			librg_network_start(&ctx, librg_address{ 7779, const_cast<char*>(address.c_str()) });
-
-			librg_log("server started!\n");
-
-			while (true) {
-				librg_tick(&ctx);
-				zpl_sleep_ms(1);
-			}
-
-			librg_network_stop(&ctx);
-			librg_free(&ctx);
+			librg_log(R"(    F4MP  Copyright (C) 2020  Hyunsung Go
+    This program comes with ABSOLUTELY NO WARRANTY.
+    This is free software, and you are welcome to redistribute it
+    under certain conditions; Read LICENSE.txt for full details.)""\n\n");
 		}
 
 		virtual ~Server()
 		{
+			librg_network_stop(&ctx);
+			librg_free(&ctx);
+
 			// just in case..
 			if (instance == this)
 			{
 				instance = nullptr;
 			}
+		}
+
+		void Start()
+		{
+			librg_network_start(&ctx, librg_address{ port, const_cast<char*>(address.c_str()) });
+
+			librg_log("    Server started. Listening on %s:%d\n", address.c_str(), port);
+		}
+
+		void Tick()
+		{
+			librg_tick(&ctx);
+			zpl_sleep_ms(1);
+		}
+
+		librg_ctx* GetContext()
+		{
+			return &ctx;
 		}
 	};
 }
