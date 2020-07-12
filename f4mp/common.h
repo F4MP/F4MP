@@ -187,7 +187,6 @@ namespace f4mp
 			WriteTuple(data, values, std::make_index_sequence<size>{});
 		}
 
-		template<>
 		static void Write(librg_data* data, const bool& value)
 		{
 			//_MESSAGE("%s", value ? "true" : "false");
@@ -195,7 +194,6 @@ namespace f4mp
 			librg_data_wb8(data, value);
 		}
 
-		template<>
 		static void Write(librg_data* data, const u8& value)
 		{
 			//_MESSAGE("%u", value);
@@ -203,7 +201,6 @@ namespace f4mp
 			librg_data_wu8(data, value);
 		}
 
-		template<>
 		static void Write(librg_data* data, const u32& value)
 		{
 			//_MESSAGE("%u", value);
@@ -211,7 +208,6 @@ namespace f4mp
 			librg_data_wu32(data, value);
 		}
 
-		template<>
 		static void Write(librg_data* data, const f32& value)
 		{
 			//_MESSAGE("%f", value);
@@ -219,13 +215,11 @@ namespace f4mp
 			librg_data_wf32(data, value);
 		}
 
-		template<>
 		static void Write(librg_data* data, const f64& value)
 		{
 			librg_data_wf64(data, value);
 		}
 
-		template<>
 		static void Write(librg_data* data, const std::string& value)
 		{
 			//_MESSAGE("%s", value.c_str());
@@ -259,37 +253,31 @@ namespace f4mp
 			ReadTuple(data, values, std::make_index_sequence<size>{});
 		}
 
-		template<>
 		static void Read(librg_data* data, bool& value)
 		{
 			value = !!librg_data_rb8(data);
 		}
 
-		template<>
 		static void Read(librg_data* data, u8& value)
 		{
 			value = librg_data_ru8(data);
 		}
 
-		template<>
 		static void Read(librg_data* data, u32& value)
 		{
 			value = librg_data_ru32(data);
 		}
 
-		template<>
 		static void Read(librg_data* data, f32& value)
 		{
 			value = librg_data_rf32(data);
 		}
 
-		template<>
 		static void Read(librg_data* data, f64& value)
 		{
 			value = librg_data_rf64(data);
 		}
 
-		template<>
 		static void Read(librg_data* data, std::string& value)
 		{
 			value.resize(librg_data_ru32(data));

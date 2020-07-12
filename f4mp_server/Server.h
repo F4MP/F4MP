@@ -7,6 +7,7 @@
 #include "Player.h"
 #include "NPC.h"
 
+#include <cfloat>
 #include <unordered_map>
 
 namespace f4mp
@@ -289,10 +290,11 @@ namespace f4mp
 			librg_network_add(&ctx, MessageType::RemoveBuilding, OnRemoveBuilding);
 			librg_network_add(&ctx, MessageType::Speak, OnSpeak);
 
-			librg_log(R"(    F4MP  Copyright (C) 2020  Hyunsung Go
-    This program comes with ABSOLUTELY NO WARRANTY.
-    This is free software, and you are welcome to redistribute it
-    under certain conditions; Read LICENSE.txt for full details.)""\n\n");
+			librg_log("\
+    F4MP  Copyright (C) 2020  Hyunsung Go\n\
+    This program comes with ABSOLUTELY NO WARRANTY.\n\
+    This is free software, and you are welcome to redistribute it\n\
+    under certain conditions; Read LICENSE.txt for full details.\n\n");
 		}
 
 		virtual ~Server()

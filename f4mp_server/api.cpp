@@ -28,6 +28,11 @@ EXPORT void server_start(f4mp::Server* server)
 	server->Start();
 }
 
+EXPORT librg_ctx* server_get_ctx(f4mp::Server* server)
+{
+	return server->GetContext();
+}
+
 EXPORT void server_tick(f4mp::Server* server)
 {
 	server->Tick();
