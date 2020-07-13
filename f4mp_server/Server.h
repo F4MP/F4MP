@@ -313,7 +313,7 @@ namespace f4mp
 		{
 			librg_network_start(&ctx, librg_address{ port, const_cast<char*>(address.c_str()) });
 
-			librg_log("    Server started. Listening on %s:%d\n", address.c_str(), port);
+			librg_log("    Server started. Listening on %s:%d\n\n", address.c_str(), port);
 		}
 
 		void Tick()

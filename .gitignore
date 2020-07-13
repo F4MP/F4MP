@@ -35,6 +35,8 @@
 *.tlog
 *.cache
 
+*.pyc
+
 .vs/
 
 f4se/

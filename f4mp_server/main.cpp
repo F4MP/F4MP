@@ -29,6 +29,8 @@ int main()
 		
 		std::ofstream file(configFilePath);
 		file << address << std::endl << port;
+
+		std::cout << std::endl;
 	}
 
     f4mp::Server* server = new f4mp::Server(address, port);
