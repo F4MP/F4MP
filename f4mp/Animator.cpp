@@ -459,6 +459,11 @@ void f4mp::Animator::Init()
 
 const std::string& f4mp::Animator::GetStateName(SInt32 id)
 {
+	if (id < 0 || id >= stateNames.size())
+	{
+		id = 0;
+	}
+
 	return stateNames[id];
 }
 

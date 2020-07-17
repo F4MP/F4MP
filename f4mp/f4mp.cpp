@@ -1242,7 +1242,13 @@ UInt32 f4mp::F4MP::GetEntityID(StaticFunctionTag* base, TESObjectREFR* ref)
 
 void f4mp::F4MP::SetEntityRef(StaticFunctionTag* base, UInt32 entityID, TESObjectREFR* ref)
 {
-	Entity::Get(GetInstance().FetchEntity(entityID))->SetRef(ref);
+	Entity* entity = Entity::Get(GetInstance().FetchEntity(entityID));
+	if (!entity)
+	{
+		throw std::exception();
+	}
+	
+	entity->SetRef(ref);
 }
 
 bool f4mp::F4MP::IsEntityValid(StaticFunctionTag* base, UInt32 entityID)
