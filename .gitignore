@@ -39,20 +39,19 @@
 
 .vs/
 
-client/common/
-client/f4se/f4se/
-client/f4se/f4se_common/
-client/f4se/f4se_loader/
-client/f4se/f4se_loader_common/
-client/f4se/f4se_steam_loader/
+f4se/
+f4se_common/
+f4se_loader/
+f4se_loader_common/
+f4se_steam_loader/
 
-client/f4se/x64/
-client/f4se/x64_vc11/
-client/f4se/xbyak/
+x64/
+x64_vc11/
+xbyak/
 
-client/f4se/f4mp/scripts/.vscode/.ropeproject/config.py
-client/f4se/f4mp/scripts/.vscode/.ropeproject/objectdb
-client/f4se/f4mp/scripts/.vscode/settings.json
-client/f4se/f4mp/scripts/copy.bat
+f4mp/scripts/.vscode/.ropeproject/config.py
+f4mp/scripts/.vscode/.ropeproject/objectdb
+f4mp/scripts/.vscode/settings.json
+f4mp/scripts/copy.bat
 
-client/f4se/f4mp_server/scripts/bin
+f4mp_server/scripts/bin
