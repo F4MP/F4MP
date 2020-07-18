@@ -1,0 +1,4 @@
+LIBRARY	"f4mp"
+EXPORTS
+F4SEPlugin_Query
+F4SEPlugin_Load
