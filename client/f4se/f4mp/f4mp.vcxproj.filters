@@ -99,9 +99,6 @@
     <ClCompile Include="Entity.cpp">
       <Filter>Source Files\old</Filter>
     </ClCompile>
-    <ClCompile Include="_f4mp.cpp">
-      <Filter>Source Files\old</Filter>
-    </ClCompile>
     <ClCompile Include="main.cpp">
       <Filter>Source Files\old</Filter>
     </ClCompile>
