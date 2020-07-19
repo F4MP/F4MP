@@ -1,7 +1,12 @@
 #include "f4se/PluginAPI.h"
 #include "f4se_common/f4se_version.h"
 
+#include "F4MP.h"
+
+#include <memory>
 #include <shlobj.h>
+
+std::unique_ptr<f4mp::F4MP> instance;
 
 extern "C"
 {
@@ -33,6 +38,13 @@ extern "C"
 
 	bool F4SEPlugin_Load(const F4SEInterface* f4se)
 	{
+		FILE* tmp;
+		AllocConsole();
+		freopen_s(&tmp, "CONOUT$", "w", stdout);
+		printf("opening console for debug.\n");
+
+		instance = std::make_unique<f4mp::F4MP>(f4se);
+
 		_MESSAGE("F4MP loaded");
 
 		return true;

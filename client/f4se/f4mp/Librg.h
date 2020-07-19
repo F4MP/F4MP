@@ -98,7 +98,7 @@ namespace f4mp
 			friend Entity;
 
 		public:
-			Librg();
+			Librg(bool server = true);
 			~Librg();
 
 			void Start(const std::string& address, int32_t port) override;

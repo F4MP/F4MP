@@ -2,6 +2,7 @@
 
 #include <string>
 #include <list>
+#include <queue>
 #include <functional>
 #include <iterator>
 #include <cstdint>
@@ -63,17 +64,24 @@ namespace f4mp
 
 		public:
 			using ID = uint32_t;
+			
+			enum : ID
+			{
+				InvalidID = (ID)-1
+			};
 
 		protected:
 			struct _Interface
 			{
 				ID id;
 
+				_Interface() : id(InvalidID) {}
+
 				virtual void SendMessage(Event::Type messageType, const EventCallback& callback, const MessageOptions& options) = 0;
 			};
 
 		public:
-			Entity(Networking& networking);
+			Entity() : _interface(nullptr) {}
 			virtual ~Entity() {}
 
 			virtual void OnCreate(Event& event) {}
@@ -113,6 +121,9 @@ namespace f4mp
 
 		protected:
 			virtual Entity::_Interface* GetEntityInterface() = 0;
+
+		private:
+			//TODO: std::queue<Entity*> entitiesThatAreWaitingToBeCreated; lol
 		};
 	}
 }

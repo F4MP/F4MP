@@ -84,6 +84,8 @@ void f4mp::librg::Entity::_Interface::SendMessage(Event::Type messageType, const
 	librg_data data;
 	librg_data_init(&data);
 
+	librg_data_went(&data, id);
+
 	MessageData eventObj(librg, type, &data);
 	callback(eventObj);
 
@@ -95,19 +97,17 @@ void f4mp::librg::Entity::_Interface::SendMessage(Event::Type messageType, const
 	librg_data_free(&data);
 }
 
-f4mp::librg::Librg::Librg() : ctx(nullptr)
+f4mp::librg::Librg::Librg(bool server) : ctx(nullptr)
 {
 	ctx = new librg_ctx();
 	librg_init(ctx);
 
+	ctx->mode = server ? LIBRG_MODE_SERVER : LIBRG_MODE_CLIENT;
 	ctx->user_data = this;
 
 	librg_event_add(ctx, LIBRG_CONNECTION_REQUEST, OnConnectionRequest);
 	librg_event_add(ctx, LIBRG_CONNECTION_ACCEPT, OnConnectionAccept);
 	librg_event_add(ctx, LIBRG_CONNECTION_REFUSE, OnConnectionRefuse);
-
-	LIBRG_ENTITY_CREATE;
-	
 }
 
 f4mp::librg::Librg::~Librg()
