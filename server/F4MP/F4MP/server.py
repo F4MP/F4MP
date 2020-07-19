@@ -3,14 +3,14 @@ from F4MP import Librg, Handler
 
 
 class Server:
+    """F4MP Server Object"""
     def __init__(self, address: str, port: int):
         self.address = address
         self.port = port
         self.ctx = ctypes.POINTER(Librg.Context)(Librg.Context())
         Librg.init(self.ctx)
-        self.task_queue = []
         self.call_map = {}
-        self.callback_hander = Handler.CallbackHandler(self)
+        self.callback_handler = Handler.CallbackHandler(self)
 
     def listener(self, name=None):
         def decorator(func):
@@ -34,8 +34,4 @@ class Server:
     def run(self):
         self.start()
         while True:
-            for task in self.task_queue:
-                for func in self.call_map[task.type]:
-                    func(task.event)
-                self.task_queue.remove(task)
             self.tick()

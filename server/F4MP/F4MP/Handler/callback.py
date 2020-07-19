@@ -64,5 +64,6 @@ class CallbackHandler:
             Librg.event_add(server.ctx, enum, self.callback_func)
 
     def callback_reception(self, event):
-        # TODO: Point to abstract Librg.classes objects to F4MP objects.
-        self.server.task_queue.append(Task(event))
+        task = Task(event)
+        for callback in self.server.call_map[task.type]:
+            callback(task)

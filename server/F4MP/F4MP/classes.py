@@ -7,10 +7,10 @@ class Item:
 
 class Inventory:
     def __init__(self, items=None, equipped=None):
-        """Represents the inventory of a player. However is not tied to any specific player.
+        """Represents the inventory of a Character. However is not tied to any specific Character.
         Args:
-            items (List[Item]): List of items a player has in its inventory
-            equipped (List[Item]): List of items player has equipped. Must be a subset of items.
+            items (List[Item]): List of items a Character has in its inventory
+            equipped (List[Item]): List of items Character has equipped. Must be a subset of items.
         """
         assert set(equipped).issubset(set(items))
         self.items = items
@@ -28,7 +28,7 @@ class SPECIAL:
         self.luck = luck
 
 
-class Player:
+class Character:
     def __init__(self, id, position, hp, ap, special, inventory):
         """
 
@@ -49,7 +49,7 @@ class Player:
 
 
 class Connection:
-    def __init__(self, address, player: Player = None):
+    def __init__(self, address, player: Character = None):
         self.address = address
         self.player = player
 
@@ -62,7 +62,7 @@ class User:
 
 
 class Event:
-    def __init__(self, type, user, player: Player = None):
+    def __init__(self, type, user, player: Character = None):
         self.type = type
         self.user = user
         self.player = player
