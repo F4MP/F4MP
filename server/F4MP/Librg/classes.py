@@ -2,9 +2,14 @@ import ctypes
 
 
 class Peer(ctypes.Structure):
+    class Host(ctypes.Structure):
+        _fields_ = [
+            ("socket", ctypes.c_void_p),
+            ("address_host", ctypes.c_byte * 16)
+        ]
     _fields_ = [
-        ("unused", ctypes.c_byte * (16 + 8 + 16 + 16 + 32 + 8 + 8)),
-        ("address", ctypes.c_byte * 20),
+        ("dispatchList", ctypes.c_byte * 16),
+        ("host", ctypes.POINTER(Host)),
     ]
 
 
