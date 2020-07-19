@@ -48,21 +48,22 @@ class Character:
         self.inventory = inventory
 
 
-class Connection:
-    def __init__(self, address, player: Character = None):
-        self.address = address
-        self.player = player
-
-
 class User:
-    def __init__(self, id, username, connection):
+    def __init__(self, id, username, connection, player: Character = None):
         self.id = id
         self.username = username
         self.connection = connection
+        self.player = player
+
+
+class Connection:
+    def __init__(self, address, user: User = None):
+        self.address = address
+        self.user = user
 
 
 class Event:
-    def __init__(self, type, user, player: Character = None):
+    def __init__(self, type, connection):
         self.type = type
-        self.user = user
-        self.player = player
+        self.connection = connection
+        self.user = connection.user
