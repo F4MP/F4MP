@@ -76,10 +76,11 @@ namespace f4mp
 
 		class Entity : public networking::Entity
 		{
-		public:
-			Entity(Librg& librg);
+			friend Librg;
 
 		private:
+			~Entity();
+
 			struct _Interface : public networking::Entity::_Interface
 			{
 				_Interface(Librg& librg) : librg(librg) {}
@@ -112,6 +113,8 @@ namespace f4mp
 
 		private:
 			librg_ctx* ctx;
+
+			Entity::_Interface* GetEntityInterface() override;
 
 			static Librg& This(librg_ctx* ctx);
 

@@ -59,6 +59,8 @@ namespace f4mp
 
 		class Entity
 		{
+			friend Networking;
+
 		public:
 			using ID = uint32_t;
 
@@ -71,7 +73,7 @@ namespace f4mp
 			};
 
 		public:
-			Entity(_Interface* _interface) : _interface(_interface) {}
+			Entity(Networking& networking);
 			virtual ~Entity() {}
 
 			virtual void OnCreate(Event& event) {}
@@ -108,6 +110,9 @@ namespace f4mp
 
 			virtual void RegisterMessage(Event::Type messageType) = 0;
 			virtual void UnregisterMessage(Event::Type messageType) = 0;
+
+		protected:
+			virtual Entity::_Interface* GetEntityInterface() = 0;
 		};
 	}
 }

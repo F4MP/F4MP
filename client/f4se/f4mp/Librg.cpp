@@ -67,8 +67,10 @@ f4mp::networking::Networking& f4mp::librg::MessageData::GetNetworking()
 	return librg;
 }
 
-f4mp::librg::Entity::Entity(Librg& librg) : networking::Entity(new librg::Entity::_Interface(librg))
+f4mp::librg::Entity::~Entity()
 {
+	delete _interface;
+	_interface = nullptr;
 }
 
 void f4mp::librg::Entity::_Interface::SendMessage(Event::Type messageType, const networking::EventCallback& callback, const networking::MessageOptions& options)
@@ -167,6 +169,11 @@ void f4mp::librg::Librg::UnregisterMessage(Event::Type messageType)
 	}
 
 	librg_network_remove(ctx, type);
+}
+
+f4mp::librg::Entity::_Interface* f4mp::librg::Librg::GetEntityInterface()
+{
+	return new Entity::_Interface(*this);
 }
 
 f4mp::librg::Librg& f4mp::librg::Librg::This(librg_ctx* ctx)
