@@ -21,11 +21,6 @@ class Server:
 
         return decorator
 
-    def is_client(self):
-        return Librg.is_client(self.ctx)
-
-    def is_connected(self):
-        return Librg.is_connected(self.ctx)
     def handle(self, func, enum, event):
         ip_b = event.peer.contents.host.contents.address_host
         print(ip_b)
