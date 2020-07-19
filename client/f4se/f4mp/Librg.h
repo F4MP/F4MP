@@ -9,6 +9,7 @@ namespace f4mp
 	namespace librg
 	{
 		class Librg;
+		class Entity;
 
 		namespace details
 		{
@@ -31,9 +32,9 @@ namespace f4mp
 			Type GetType() const override;
 
 		private:
-			librg_event* info;
+			librg_event* _interface;
 
-			Event(librg_event* info);
+			Event(librg_event* _interface);
 
 			librg_data* GetStorage() override;
 
@@ -46,7 +47,7 @@ namespace f4mp
 			Type GetType() const override;
 
 		private:
-			librg_message* info;
+			librg_message* _interface;
 
 			librg_data* GetStorage() override;
 
@@ -55,7 +56,7 @@ namespace f4mp
 
 		class MessageData : public details::_Event
 		{
-			friend Librg;
+			friend Entity;
 
 		public:
 			Type GetType() const override;
@@ -63,20 +64,37 @@ namespace f4mp
 		private:
 			Librg& librg;
 
-			u16 type;
-			librg_data* info;
+			librg_message_id type;
+			librg_data* _interface;
 
-			MessageData(Librg& librg, u16 type, librg_data* info);
+			MessageData(Librg& librg, librg_message_id type, librg_data* _interface);
 
 			librg_data* GetStorage() override;
 
 			networking::Networking& GetNetworking() override;
 		};
 
+		class Entity : public networking::Entity
+		{
+		public:
+			Entity(Librg& librg);
+
+		private:
+			struct _Interface : public networking::Entity::_Interface
+			{
+				_Interface(Librg& librg) : librg(librg) {}
+
+				void SendMessage(Event::Type messageType, const networking::EventCallback& callback, const networking::MessageOptions& options) override;
+
+				Librg& librg;
+			};
+		};
+
 		class Librg : public networking::Networking
 		{
 			friend Event;
 			friend Message;
+			friend Entity;
 
 		public:
 			Librg();
@@ -94,8 +112,6 @@ namespace f4mp
 
 		private:
 			librg_ctx* ctx;
-
-			void SendMessage(networking::Entity& sender, Event::Type messageType, const networking::EventCallback& callback) override;
 
 			static Librg& This(librg_ctx* ctx);
 

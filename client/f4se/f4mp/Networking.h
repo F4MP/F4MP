@@ -47,9 +47,31 @@ namespace f4mp
 
 		using EventCallback = std::function<void(Event&)>;
 
+		struct MessageOptions
+		{
+			bool reliable;
+
+			Entity* target;
+			Entity* except;
+
+			MessageOptions(bool reliable = true, Entity* target = nullptr, Entity* except = nullptr);
+		};
+
 		class Entity
 		{
 		public:
+			using ID = uint32_t;
+
+		protected:
+			struct _Interface
+			{
+				ID id;
+
+				virtual void SendMessage(Event::Type messageType, const EventCallback& callback, const MessageOptions& options) = 0;
+			};
+
+		public:
+			Entity(_Interface* _interface) : _interface(_interface) {}
 			virtual ~Entity() {}
 
 			virtual void OnCreate(Event& event) {}
@@ -60,7 +82,10 @@ namespace f4mp
 
 			virtual void OnMessageReceive(Event& event) {}
 
-			void SendMessage(Event& event, Event::Type messageType, const EventCallback& callback);
+			void SendMessage(Event::Type messageType, const EventCallback& callback, const MessageOptions& options = MessageOptions());
+
+		protected:
+			_Interface* _interface;
 		};
 
 		class Networking
@@ -83,9 +108,6 @@ namespace f4mp
 
 			virtual void RegisterMessage(Event::Type messageType) = 0;
 			virtual void UnregisterMessage(Event::Type messageType) = 0;
-
-		protected:
-			virtual void SendMessage(Entity& sender, Event::Type messageType, const EventCallback& callback) = 0;
 		};
 	}
 }

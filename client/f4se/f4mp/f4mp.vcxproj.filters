@@ -1,9 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <Filter Include="scripts">
-      <UniqueIdentifier>{beb86421-8d4e-4371-821a-5300dbf76c64}</UniqueIdentifier>
-    </Filter>
     <Filter Include="f4se">
       <UniqueIdentifier>{2009725f-77b9-4ae9-9786-54d49666f207}</UniqueIdentifier>
     </Filter>
@@ -15,12 +12,15 @@
       <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
       <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
     </Filter>
-    <Filter Include="Source Files\old">
-      <UniqueIdentifier>{0c5fa508-4e21-41e1-8b8d-e29f24cdc272}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Header Files">
       <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
       <Extensions>h;hh;hpp;hxx;hm;inl;inc;ipp;xsd</Extensions>
+    </Filter>
+    <Filter Include="_old">
+      <UniqueIdentifier>{d18575c6-ad52-4fbc-b098-9955d4b82352}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="_old\scripts">
+      <UniqueIdentifier>{beb86421-8d4e-4371-821a-5300dbf76c64}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -84,95 +84,122 @@
     <ClCompile Include="Librg.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Animations.cpp">
-      <Filter>Source Files\old</Filter>
-    </ClCompile>
-    <ClCompile Include="Animator.cpp">
-      <Filter>Source Files\old</Filter>
-    </ClCompile>
-    <ClCompile Include="Character.cpp">
-      <Filter>Source Files\old</Filter>
-    </ClCompile>
-    <ClCompile Include="common.cpp">
-      <Filter>Source Files\old</Filter>
-    </ClCompile>
-    <ClCompile Include="Entity.cpp">
-      <Filter>Source Files\old</Filter>
-    </ClCompile>
-    <ClCompile Include="main.cpp">
-      <Filter>Source Files\old</Filter>
-    </ClCompile>
-    <ClCompile Include="NPC.cpp">
-      <Filter>Source Files\old</Filter>
-    </ClCompile>
-    <ClCompile Include="Player.cpp">
-      <Filter>Source Files\old</Filter>
-    </ClCompile>
-    <ClCompile Include="TopicInfoIDs.cpp">
-      <Filter>Source Files\old</Filter>
-    </ClCompile>
     <ClCompile Include="Networking.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="f4mp.cpp">
-      <Filter>Source Files\old</Filter>
+    <ClCompile Include="main.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="old\common.cpp">
+      <Filter>_old</Filter>
+    </ClCompile>
+    <ClCompile Include="old\Entity.cpp">
+      <Filter>_old</Filter>
+    </ClCompile>
+    <ClCompile Include="old\f4mp.cpp">
+      <Filter>_old</Filter>
+    </ClCompile>
+    <ClCompile Include="old\NPC.cpp">
+      <Filter>_old</Filter>
+    </ClCompile>
+    <ClCompile Include="old\Player.cpp">
+      <Filter>_old</Filter>
+    </ClCompile>
+    <ClCompile Include="old\TopicInfoIDs.cpp">
+      <Filter>_old</Filter>
+    </ClCompile>
+    <ClCompile Include="old\Animations.cpp">
+      <Filter>_old</Filter>
+    </ClCompile>
+    <ClCompile Include="old\Animator.cpp">
+      <Filter>_old</Filter>
+    </ClCompile>
+    <ClCompile Include="old\Character.cpp">
+      <Filter>_old</Filter>
+    </ClCompile>
+    <ClCompile Include="F4MP.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="old\main.cpp">
+      <Filter>_old</Filter>
+    </ClCompile>
+    <ClCompile Include="Inventory.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="exports.def">
       <Filter>Source Files</Filter>
     </None>
-    <None Include="scripts\F4MP.psc">
-      <Filter>scripts</Filter>
+    <None Include="old\scripts\F4MPFirePoint.psc">
+      <Filter>_old\scripts</Filter>
     </None>
-    <None Include="scripts\F4MPFirePoint.psc">
-      <Filter>scripts</Filter>
+    <None Include="old\scripts\F4MPPlayer.psc">
+      <Filter>_old\scripts</Filter>
     </None>
-    <None Include="scripts\F4MPPlayer.psc">
-      <Filter>scripts</Filter>
+    <None Include="old\scripts\F4MPQuest.psc">
+      <Filter>_old\scripts</Filter>
     </None>
-    <None Include="scripts\F4MPQuest.psc">
-      <Filter>scripts</Filter>
+    <None Include="old\scripts\F4MP.psc">
+      <Filter>_old\scripts</Filter>
+    </None>
+    <None Include="old\scripts\F4MPEntitySync.psc">
+      <Filter>_old\scripts</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="f4mp.h">
+    <ClInclude Include="Networking.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="common.h">
+    <ClInclude Include="Librg.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Clone.h">
+    <ClInclude Include="Inventory.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="client.h">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="old\client.h">
+      <Filter>_old</Filter>
     </ClInclude>
-    <ClInclude Include="Player.h">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="old\Clone.h">
+      <Filter>_old</Filter>
     </ClInclude>
-    <ClInclude Include="Entity.h">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="old\common.h">
+      <Filter>_old</Filter>
     </ClInclude>
-    <ClInclude Include="NPC.h">
+    <ClInclude Include="old\Entity.h">
+      <Filter>_old</Filter>
+    </ClInclude>
+    <ClInclude Include="old\f4mp.h">
+      <Filter>_old</Filter>
+    </ClInclude>
+    <ClInclude Include="old\NPC.h">
+      <Filter>_old</Filter>
+    </ClInclude>
+    <ClInclude Include="old\Player.h">
+      <Filter>_old</Filter>
+    </ClInclude>
+    <ClInclude Include="old\TopicInfoIDs.h">
+      <Filter>_old</Filter>
+    </ClInclude>
+    <ClInclude Include="old\Animations.h">
+      <Filter>_old</Filter>
+    </ClInclude>
+    <ClInclude Include="old\Animator.h">
+      <Filter>_old</Filter>
+    </ClInclude>
+    <ClInclude Include="old\Character.h">
+      <Filter>_old</Filter>
+    </ClInclude>
+    <ClInclude Include="F4MP.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Character.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="TopicInfoIDs.h">
+    <ClInclude Include="Player.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Animator.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Animations.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Networking.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Librg.h">
+    <ClInclude Include="Math.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

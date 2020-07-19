@@ -2,6 +2,7 @@
 #include "f4mp.h"
 
 #include "f4se/NiNodes.h"
+#include "..\Character.h"
 
 f4mp::Character::Character()
 {
@@ -255,5 +256,9 @@ f4mp::Character::TransformBuffer::TransformBuffer() : TransformBuffer(0, -1.0, -
 }
 
 f4mp::Character::TransformBuffer::TransformBuffer(size_t transforms, double syncTime, double time, float deltaTime) : prev(transforms), next(transforms), syncTime(syncTime), time(time), deltaTime(deltaTime)
+{
+}
+
+f4mp::Status::Status(float hp, float ap, float maxHP, float maxAP) : hp(hp), ap(ap), maxHP(maxHP), maxAP(maxAP)
 {
 }
