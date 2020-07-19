@@ -1,13 +1,8 @@
 from ctypes import CFUNCTYPE
 
+import F4MP
 from F4MP import Librg
 from F4MP.Librg.classes import Event
-
-
-class Task:
-    def __init__(self, event):
-        self.event = event
-        self.type = CallbackHandler.Enum.reverse[event.id]
 
 
 class CallbackHandler:
@@ -64,6 +59,6 @@ class CallbackHandler:
             Librg.event_add(server.ctx, enum, self.callback_func)
 
     def callback_reception(self, event):
-        task = Task(event)
-        for callback in self.server.call_map[task.type]:
-            callback(task)
+        event_type = self.Enum.reverse[event.id]
+        for callback in self.server.call_map[event_type]:
+            self.server.handle(callback, event_type, event)
