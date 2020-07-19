@@ -45,7 +45,7 @@ func_map.update(  # Populate func_map with the functions in Interface.
     {func: getattr(Interface, func) for func in dir(Interface) if
      callable(getattr(Interface, func)) and not func.startswith("__")})
 
-__all__ = tuple(func_map.keys())  # __getattr__ won't be called unless this is populated for some reason
+__all__ = tuple(func_map.keys())  # __getattr__ won't be called unless this is populated
 
 
 def __getattr__(item):
