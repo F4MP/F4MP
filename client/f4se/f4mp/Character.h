@@ -1,49 +1,39 @@
 #pragma once
 
 #include "Entity.h"
-#include "Animator.h"
+#include "Inventory.h"
 
-#include <memory>
-#include <atomic>
+#include <array>
 
 namespace f4mp
 {
+	class SPECIAL
+	{
+		enum Type
+		{
+			Strength,
+			Perception,
+			Endurance,
+			Charisma,
+			Intelligence,
+			Agility,
+			Luck
+		};
+
+	private:
+		std::array<int, 7> special;
+	};
+
 	class Character : public Entity
 	{
 	public:
-		struct Transform
-		{
-			zpl_vec3 position;
-			zpl_quat rotation;
-			float scale;
-		};
-
-		struct TransformBuffer
-		{
-			std::vector<Transform> prev, next;
-
-			double syncTime, time;
-			float deltaTime;
-
-			TransformBuffer();
-			TransformBuffer(size_t transforms, double syncTime, double time, float deltaTime);
-		};
-
-		Character();
-
-		Animator& GetAnimator();
-		const Animator& GetAnimator() const;
-
-		void OnEntityUpdate(librg_event* event) override;
-
-		void OnClientUpdate(librg_event* event) override;
-
-		void OnTick() override;
+		Character(const Vector3& position, float hp, float ap, const SPECIAL& special, const Inventory& inventory);
 
 	private:
-		std::unique_ptr<Animator> animator;
-		
-		std::atomic_flag lock = ATOMIC_FLAG_INIT;
-		TransformBuffer transformBuffer;
+		float hp;
+		float ap;
+
+		SPECIAL special;
+		Inventory inventory;
 	};
 }

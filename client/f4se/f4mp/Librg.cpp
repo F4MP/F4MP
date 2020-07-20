@@ -24,10 +24,6 @@ librg_data* f4mp::librg::Event::GetStorage()
 	return _interface->data;
 }
 
-f4mp::librg::Event::Event(librg_event* _interface) : _interface(_interface)
-{
-}
-
 f4mp::networking::Networking& f4mp::librg::Event::GetNetworking()
 {
 	return Librg::This(_interface->ctx);
@@ -67,8 +63,10 @@ f4mp::networking::Networking& f4mp::librg::MessageData::GetNetworking()
 	return librg;
 }
 
-f4mp::librg::Entity::Entity(Librg& librg) : networking::Entity(new librg::Entity::_Interface(librg))
+f4mp::librg::Entity::~Entity()
 {
+	delete _interface;
+	_interface = nullptr;
 }
 
 void f4mp::librg::Entity::_Interface::SendMessage(Event::Type messageType, const networking::EventCallback& callback, const networking::MessageOptions& options)
@@ -82,6 +80,8 @@ void f4mp::librg::Entity::_Interface::SendMessage(Event::Type messageType, const
 	librg_data data;
 	librg_data_init(&data);
 
+	librg_data_went(&data, id);
+
 	MessageData eventObj(librg, type, &data);
 	callback(eventObj);
 
@@ -93,19 +93,17 @@ void f4mp::librg::Entity::_Interface::SendMessage(Event::Type messageType, const
 	librg_data_free(&data);
 }
 
-f4mp::librg::Librg::Librg() : ctx(nullptr)
+f4mp::librg::Librg::Librg(bool server) : ctx(nullptr)
 {
 	ctx = new librg_ctx();
 	librg_init(ctx);
 
+	ctx->mode = server ? LIBRG_MODE_SERVER : LIBRG_MODE_CLIENT;
 	ctx->user_data = this;
 
 	librg_event_add(ctx, LIBRG_CONNECTION_REQUEST, OnConnectionRequest);
 	librg_event_add(ctx, LIBRG_CONNECTION_ACCEPT, OnConnectionAccept);
 	librg_event_add(ctx, LIBRG_CONNECTION_REFUSE, OnConnectionRefuse);
-
-	LIBRG_ENTITY_CREATE;
-	
 }
 
 f4mp::librg::Librg::~Librg()
@@ -169,6 +167,11 @@ void f4mp::librg::Librg::UnregisterMessage(Event::Type messageType)
 	librg_network_remove(ctx, type);
 }
 
+f4mp::librg::Entity::_Interface* f4mp::librg::Librg::GetEntityInterface()
+{
+	return new Entity::_Interface(*this);
+}
+
 f4mp::librg::Librg& f4mp::librg::Librg::This(librg_ctx* ctx)
 {
 	return *static_cast<Librg*>(ctx->user_data);
@@ -194,20 +197,29 @@ void f4mp::librg::Librg::OnConnectionRefuse(librg_event* event)
 
 void f4mp::librg::Librg::OnEntityCreate(librg_event* event)
 {
+	Event eventObj(event);
+	
+	int instantiationID = eventObj.Read<Entity::InstantiationID>();
+
+	This(event->ctx).Instantiate(instantiationID, event->entity->id, event->entity->type)->OnCreate(eventObj);
 }
 
 void f4mp::librg::Librg::OnEntityUpdate(librg_event* event)
 {
+	Event eventObj(event);
 }
 
 void f4mp::librg::Librg::OnEntityRemove(librg_event* event)
 {
+	Event eventObj(event);
 }
 
 void f4mp::librg::Librg::OnClientStreamerUpdate(librg_event* event)
 {
+	Event eventObj(event);
 }
 
 void f4mp::librg::Librg::OnMessageReceive(librg_message* message)
 {
+	Message messageObj(message);
 }

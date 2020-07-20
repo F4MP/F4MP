@@ -34,7 +34,7 @@ namespace f4mp
 		private:
 			librg_event* _interface;
 
-			Event(librg_event* _interface);
+			Event(librg_event* _interface) : _interface(_interface) {}
 
 			librg_data* GetStorage() override;
 
@@ -43,11 +43,15 @@ namespace f4mp
 
 		class Message : public details::_Event
 		{
+			friend Librg;
+
 		public:
 			Type GetType() const override;
 
 		private:
 			librg_message* _interface;
+
+			Message(librg_message* _interface) : _interface(_interface) {}
 
 			librg_data* GetStorage() override;
 
@@ -76,10 +80,11 @@ namespace f4mp
 
 		class Entity : public networking::Entity
 		{
-		public:
-			Entity(Librg& librg);
+			friend Librg;
 
 		private:
+			~Entity();
+
 			struct _Interface : public networking::Entity::_Interface
 			{
 				_Interface(Librg& librg) : librg(librg) {}
@@ -97,7 +102,7 @@ namespace f4mp
 			friend Entity;
 
 		public:
-			Librg();
+			Librg(bool server = true);
 			~Librg();
 
 			void Start(const std::string& address, int32_t port) override;
@@ -112,6 +117,8 @@ namespace f4mp
 
 		private:
 			librg_ctx* ctx;
+
+			Entity::_Interface* GetEntityInterface() override;
 
 			static Librg& This(librg_ctx* ctx);
 

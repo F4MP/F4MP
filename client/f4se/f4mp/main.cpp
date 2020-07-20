@@ -1,10 +1,20 @@
 #include "f4se/PluginAPI.h"
 #include "f4se_common/f4se_version.h"
 
+#include "F4MP.h"
+
+#include <memory>
 #include <shlobj.h>
+
+std::unique_ptr<f4mp::F4MP> instance;
 
 extern "C"
 {
+	const char* F4MP_GetVersion()
+	{
+		return F4MP_VERSION;
+	}
+
 	bool F4SEPlugin_Query(const F4SEInterface* f4se, PluginInfo* info)
 	{
 		gLog.OpenRelative(CSIDL_MYDOCUMENTS, "\\My Games\\Fallout4\\F4MP\\F4MP.log");
@@ -33,6 +43,13 @@ extern "C"
 
 	bool F4SEPlugin_Load(const F4SEInterface* f4se)
 	{
+		FILE* tmp;
+		AllocConsole();
+		freopen_s(&tmp, "CONOUT$", "w", stdout);
+		printf("opening console for debug.\n");
+
+		instance = std::make_unique<f4mp::F4MP>(f4se);
+
 		_MESSAGE("F4MP loaded");
 
 		return true;

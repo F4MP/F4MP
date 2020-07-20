@@ -2,6 +2,7 @@
 
 #include <string>
 #include <list>
+#include <unordered_map>
 #include <functional>
 #include <iterator>
 #include <cstdint>
@@ -11,6 +12,20 @@ namespace f4mp
 	namespace networking
 	{
 		class Networking;
+
+		struct Vector3
+		{
+			float x, y, z;
+
+			Vector3() : x(0.f), y(0.f), z(0.f) {}
+		};
+
+		struct Quaternion
+		{
+			float x, y, z, w;
+
+			Quaternion() : x(0.f), y(0.f), z(0.f) {}
+		};
 
 		class Event
 		{
@@ -59,19 +74,40 @@ namespace f4mp
 
 		class Entity
 		{
+			friend Networking;
+
 		public:
+			using Type = uint32_t;
+
 			using ID = uint32_t;
+
+			using InstantiationID = int32_t;
+
+			enum : Type
+			{
+				ClientType = 0
+			};
+
+			enum : ID
+			{
+				InvalidID = (ID)-1
+			};
 
 		protected:
 			struct _Interface
 			{
 				ID id;
 
+				_Interface() : id(InvalidID) {}
+
 				virtual void SendMessage(Event::Type messageType, const EventCallback& callback, const MessageOptions& options) = 0;
 			};
 
 		public:
-			Entity(_Interface* _interface) : _interface(_interface) {}
+			Vector3 position;
+			Quaternion rotation;
+
+			Entity() : _interface(nullptr) {}
 			virtual ~Entity() {}
 
 			virtual void OnCreate(Event& event) {}
@@ -93,6 +129,8 @@ namespace f4mp
 			friend Entity;
 
 		public:
+			std::function<Entity* (Entity::Type entityType)> instantiate;
+
 			EventCallback onConnectionRequest;
 			EventCallback onConnectionAccept;
 			EventCallback onConnectionRefuse;
@@ -108,6 +146,16 @@ namespace f4mp
 
 			virtual void RegisterMessage(Event::Type messageType) = 0;
 			virtual void UnregisterMessage(Event::Type messageType) = 0;
+
+			virtual void Create(Entity* entity);
+
+		protected:
+			virtual Entity::_Interface* GetEntityInterface() = 0;
+
+			Entity* Instantiate(Entity::InstantiationID instantiationID, Entity::ID entityID, Entity::Type entityType);
+
+		private:
+			std::unordered_map<Entity::InstantiationID, Entity*> entityInstantiationQueue;
 		};
 	}
 }

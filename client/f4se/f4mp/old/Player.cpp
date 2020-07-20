@@ -2,6 +2,7 @@
 #include "f4mp.h"
 
 #include "f4se/NiNodes.h"
+#include "..\Player.h"
 
 void f4mp::Player::OnConnect(Actor* player, TESNPC* playerActorBase)
 {
