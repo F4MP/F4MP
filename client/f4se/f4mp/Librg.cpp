@@ -24,10 +24,6 @@ librg_data* f4mp::librg::Event::GetStorage()
 	return _interface->data;
 }
 
-f4mp::librg::Event::Event(librg_event* _interface) : _interface(_interface)
-{
-}
-
 f4mp::networking::Networking& f4mp::librg::Event::GetNetworking()
 {
 	return Librg::This(_interface->ctx);
@@ -201,20 +197,29 @@ void f4mp::librg::Librg::OnConnectionRefuse(librg_event* event)
 
 void f4mp::librg::Librg::OnEntityCreate(librg_event* event)
 {
+	Event eventObj(event);
+	
+	int instantiationID = eventObj.Read<Entity::InstantiationID>();
+
+	This(event->ctx).Instantiate(instantiationID, event->entity->id, event->entity->type)->OnCreate(eventObj);
 }
 
 void f4mp::librg::Librg::OnEntityUpdate(librg_event* event)
 {
+	Event eventObj(event);
 }
 
 void f4mp::librg::Librg::OnEntityRemove(librg_event* event)
 {
+	Event eventObj(event);
 }
 
 void f4mp::librg::Librg::OnClientStreamerUpdate(librg_event* event)
 {
+	Event eventObj(event);
 }
 
 void f4mp::librg::Librg::OnMessageReceive(librg_message* message)
 {
+	Message messageObj(message);
 }

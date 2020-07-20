@@ -7,6 +7,6 @@ namespace f4mp
 	class Entity : public networking::Entity
 	{
 	public:
-		Entity();
+		Entity(const Vector3& position);
 	};
 }

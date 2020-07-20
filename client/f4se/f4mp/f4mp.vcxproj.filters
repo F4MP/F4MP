@@ -147,6 +147,9 @@
     <ClCompile Include="..\f4se\ScaleformAPI.cpp">
       <Filter>f4se</Filter>
     </ClCompile>
+    <ClCompile Include="Entity.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="exports.def">

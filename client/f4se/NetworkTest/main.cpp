@@ -4,7 +4,7 @@
 
 int main()
 {
-	f4mp::networking::Networking* networking = new f4mp::librg::Librg(true);
+	f4mp::networking::Networking* networking = new f4mp::librg::Librg(false);
 
 	networking->onConnectionRequest = [](f4mp::networking::Event& event)
 	{

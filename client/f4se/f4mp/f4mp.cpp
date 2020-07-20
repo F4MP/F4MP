@@ -1,35 +1,76 @@
 #include "F4MP.h"
 #include "Librg.h"
 
+#include "f4se/PluginManager.h"
 #include "f4se/GameInput.h"
 #include "f4se/GameMenus.h"
-#include "f4se/PluginManager.h"
-	
-class F4MPInputHandler : public PlayerInputHandler
+
+#include <memory>
+
+namespace f4mp
 {
-public:
-	F4MPInputHandler() : PlayerInputHandler() { }
-
-	virtual void OnButtonEvent(ButtonEvent* inputEvent)
+	class InputHandler : public PlayerInputHandler
 	{
-		if ((*g_ui)->numPauseGame)
+		friend F4MP;
+
+	public:
+		InputHandler(F4MP& instance) : PlayerInputHandler(), instance(instance) { }
+
+		~InputHandler()
 		{
-			return;
+			PlayerControls* controls = *g_playerControls;
+			if (controls == nullptr)
+			{
+				return;
+			}
+
+			PlayerInputHandler* _this = this;
+			SInt64 index = controls->inputEvents1.GetItemIndex(_this);
+			if (index < 0)
+			{
+				return;
+			}
+
+			controls->inputEvents1.Remove(index);
 		}
 
-		switch (inputEvent->keyMask)
+		void OnButtonEvent(ButtonEvent* inputEvent)
 		{
-		case 112:
-			break;
-		}
-	}
-};
+			if ((*g_ui)->numPauseGame)
+			{
+				return;
+			}
 
-F4MPInputHandler inputHandler;
+			if (inputEvent->deviceType != InputEvent::kDeviceType_Keyboard)
+			{
+				return;
+			}
+
+			if (inputEvent->isDown != 1.f || inputEvent->timer != 0.f)
+			{
+				return;
+			}
+
+			switch (inputEvent->keyMask)
+			{
+			case 112:
+				printf("F1\n");
+				break;
+			}
+		}
+
+	private:
+		F4MP& instance;
+	};
+}
+
+std::unique_ptr<f4mp::InputHandler> inputHandler;
 
 f4mp::F4MP::F4MP(const F4SEInterface* f4se) : networking(nullptr), pluginHandle(kPluginHandle_Invalid)
 {
 	networking = new librg::Librg(false);
+
+	inputHandler = std::make_unique<InputHandler>(*this);
 
 	pluginHandle = f4se->GetPluginHandle();
 
@@ -38,7 +79,7 @@ f4mp::F4MP::F4MP(const F4SEInterface* f4se) : networking(nullptr), pluginHandle(
 			switch (msg->type)
 			{
 			case F4SEMessagingInterface::kMessage_GameLoaded:
-				(*g_playerControls)->inputEvents1.Push(&inputHandler);
+				(*g_playerControls)->inputEvents1.Push(inputHandler.get());
 				break;
 			}
 		});

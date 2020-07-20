@@ -34,7 +34,7 @@ namespace f4mp
 		private:
 			librg_event* _interface;
 
-			Event(librg_event* _interface);
+			Event(librg_event* _interface) : _interface(_interface) {}
 
 			librg_data* GetStorage() override;
 
@@ -43,11 +43,15 @@ namespace f4mp
 
 		class Message : public details::_Event
 		{
+			friend Librg;
+
 		public:
 			Type GetType() const override;
 
 		private:
 			librg_message* _interface;
+
+			Message(librg_message* _interface) : _interface(_interface) {}
 
 			librg_data* GetStorage() override;
 

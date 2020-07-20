@@ -10,6 +10,11 @@ std::unique_ptr<f4mp::F4MP> instance;
 
 extern "C"
 {
+	const char* F4MP_GetVersion()
+	{
+		return F4MP_VERSION;
+	}
+
 	bool F4SEPlugin_Query(const F4SEInterface* f4se, PluginInfo* info)
 	{
 		gLog.OpenRelative(CSIDL_MYDOCUMENTS, "\\My Games\\Fallout4\\F4MP\\F4MP.log");

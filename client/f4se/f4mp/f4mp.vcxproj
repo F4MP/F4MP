@@ -210,6 +210,7 @@ copy "$(ProjectDir)\scripts\F4MPQuest.psc" "D:\SteamLibrary\steamapps\common\Fal
     <ClCompile Include="..\f4se\ScaleformCallbacks.cpp" />
     <ClCompile Include="..\f4se\ScaleformValue.cpp" />
     <ClCompile Include="Character.cpp" />
+    <ClCompile Include="Entity.cpp" />
     <ClCompile Include="F4MP.cpp" />
     <ClCompile Include="Inventory.cpp" />
     <ClCompile Include="Librg.cpp">
