@@ -46,7 +46,7 @@ client/f4se/f4se_loader/
 client/f4se/f4se_loader_common/
 client/f4se/f4se_steam_loader/
 
-client/f4se/x64/
+x64/
 client/f4se/x64_vc11/
 client/f4se/xbyak/
 

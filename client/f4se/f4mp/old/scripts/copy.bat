@@ -1,0 +1,1 @@
+copy "*.psc" "D:\SteamLibrary\steamapps\common\Fallout 4\Data\Scripts\Source\User\"

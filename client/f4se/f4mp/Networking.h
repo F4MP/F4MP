@@ -10,8 +10,12 @@ namespace f4mp
 {
 	namespace networking
 	{
+		class Networking;
+
 		class Event
 		{
+			friend class Entity;
+
 		public:
 			using Type = uint32_t;
 
@@ -35,13 +39,39 @@ namespace f4mp
 			}
 
 		protected:
+			virtual Networking& GetNetworking() = 0;
+
 			virtual void _Read(void* value, size_t size) = 0;
 			virtual void _Write(const void* value, size_t size) = 0;
+		};
+
+		using EventCallback = std::function<void(Event&)>;
+
+		struct MessageOptions
+		{
+			bool reliable;
+
+			Entity* target;
+			Entity* except;
+
+			MessageOptions(bool reliable = true, Entity* target = nullptr, Entity* except = nullptr);
 		};
 
 		class Entity
 		{
 		public:
+			using ID = uint32_t;
+
+		protected:
+			struct _Interface
+			{
+				ID id;
+
+				virtual void SendMessage(Event::Type messageType, const EventCallback& callback, const MessageOptions& options) = 0;
+			};
+
+		public:
+			Entity(_Interface* _interface) : _interface(_interface) {}
 			virtual ~Entity() {}
 
 			virtual void OnCreate(Event& event) {}
@@ -51,14 +81,21 @@ namespace f4mp
 			virtual void OnClientUpdate(Event& event) {}
 
 			virtual void OnMessageReceive(Event& event) {}
+
+			void SendMessage(Event::Type messageType, const EventCallback& callback, const MessageOptions& options = MessageOptions());
+
+		protected:
+			_Interface* _interface;
 		};
 
 		class Networking
 		{
+			friend Entity;
+
 		public:
-			std::function<void(Event&)> onConnectionRequest;
-			std::function<void(Event&)> onConnectionAccept;
-			std::function<void(Event&)> onConnectionRefuse;
+			EventCallback onConnectionRequest;
+			EventCallback onConnectionAccept;
+			EventCallback onConnectionRefuse;
 
 			virtual ~Networking() {}
 
@@ -68,6 +105,9 @@ namespace f4mp
 			virtual void Tick() = 0;
 
 			virtual bool Connected() const = 0;
+
+			virtual void RegisterMessage(Event::Type messageType) = 0;
+			virtual void UnregisterMessage(Event::Type messageType) = 0;
 		};
 	}
 }
