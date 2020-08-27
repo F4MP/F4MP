@@ -1,0 +1,2 @@
+P:\Projects-win\Fallout\F4MP\client\tools\log_collector\Debug\log_collector.exe
+P:\Projects-win\Fallout\F4MP\client\tools\log_collector\Debug\log_collector.pdb
