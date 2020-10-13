@@ -16,6 +16,7 @@
 #include "f4se/PapyrusDelayFunctors.h"
 
 #include <fstream>
+#include <iostream>
 #include <iterator>
 #include <shlobj.h>				// CSIDL_MYCODUMENTS
 
