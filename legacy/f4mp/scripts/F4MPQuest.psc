@@ -120,6 +120,7 @@ EndFunction
 
 ; TODO: mutiple timers
 bool Function Connect(string address, int port)
+	Debug.Trace("Attempting to connect to: " + address)
 	Actor client = Game.GetPlayer()
 	ActorBase clientActorBase = client.GetActorBase()
 	
@@ -136,7 +137,7 @@ Event OnKeyDown(int keyCode)
 	If keyCode == 112
 		RegisterForExternalEvent("OnTopicInfoRegister", "OnTopicInfoRegister")
 		RegisterForExternalEvent("OnAdditionalTopicInfoRegister", "RegisterTopicInfos")
-		
+		Debug.Notification("Keypress detected")
 		Connect("", 7779)
 
 		playerIDs = new int[0]
