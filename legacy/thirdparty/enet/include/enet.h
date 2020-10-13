@@ -5525,7 +5525,25 @@ extern "C" {
                 return -1;
             }
         }
-    #endif // __MINGW__
+    #else
+
+    // These two functions should have been declared in ws2tcpip.h,
+    // which was already included. Somehow they aren't, so here they
+    // are again.
+    WINSOCK_API_LINKAGE
+    INT WSAAPI inet_pton(
+    	INT   Family,
+    	PCSTR pszAddrString,
+    	PVOID pAddrBuf
+    );
+
+    PCSTR WSAAPI inet_ntop(
+    	INT        Family,
+    	const VOID *pAddr,
+    	PSTR       pStringBuf,
+    	size_t     StringBufSize
+    );
+    #endif // !__MINGW__
 
     int enet_initialize(void) {
         WORD versionRequested = MAKEWORD(1, 1);
