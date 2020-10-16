@@ -23,7 +23,7 @@
     <ProjectGuid>{F021FA50-A159-46F9-8455-B079C458E5AF}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>f4mp</RootNamespace>
-    <WindowsTargetPlatformVersion>10.0.18362.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -48,7 +48,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v140</PlatformToolset>
+    <PlatformToolset>v142</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
@@ -106,11 +106,8 @@
       <ModuleDefinitionFile>exports.def</ModuleDefinitionFile>
     </Link>
     <PostBuildEvent>
-      <Command>copy "$(TargetPath)" "D:\SteamLibrary\steamapps\common\Fallout 4\Data\F4SE\Plugins\$(TargetFileName)"
-copy "$(ProjectDir)\scripts\F4MP.psc" "D:\SteamLibrary\steamapps\common\Fallout 4\Data\Scripts\Source\User\F4MP.psc"
-copy "$(ProjectDir)\scripts\F4MPFirePoint.psc" "D:\SteamLibrary\steamapps\common\Fallout 4\Data\Scripts\Source\User\F4MPFirePoint.psc"
-copy "$(ProjectDir)\scripts\F4MPPlayer.psc" "D:\SteamLibrary\steamapps\common\Fallout 4\Data\Scripts\Source\User\F4MPPlayer.psc"
-copy "$(ProjectDir)\scripts\F4MPQuest.psc" "D:\SteamLibrary\steamapps\common\Fallout 4\Data\Scripts\Source\User\F4MPQuest.psc"</Command>
+      <Command>
+      </Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -148,7 +145,8 @@ copy "$(ProjectDir)\scripts\F4MPQuest.psc" "D:\SteamLibrary\steamapps\common\Fal
       <ModuleDefinitionFile>exports.def</ModuleDefinitionFile>
     </Link>
     <PostBuildEvent>
-      <Command>copy "$(TargetPath)" "D:\SteamLibrary\steamapps\common\Fallout 4\Data\F4SE\Plugins\$(TargetFileName)"</Command>
+      <Command>
+      </Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">

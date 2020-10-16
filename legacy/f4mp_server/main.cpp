@@ -5,35 +5,30 @@
 
 #include <iostream>
 #include <fstream>
+#include <cstdlib>
 
 f4mp::Server* f4mp::Server::instance = nullptr;
 
-int main()
+int main(int argc, char* argv[])
 {
-	const std::string configFilePath = "server_config.txt";
-
-	std::string address;
+	const std::string address = "localhost";
 	i32 port = 7779;
 
-	std::ifstream config(configFilePath);
-	if (config)
+	if (argc > 1)
 	{
-		config >> address;
-		config >> port;
-		config.close();
-	}
-	else
-	{
-		std::cout << "address? ";
-		std::cin >> address;
-		
-		std::ofstream file(configFilePath);
-		file << address << std::endl << port;
-
-		std::cout << std::endl;
+		try
+		{
+			port = std::stoi(std::string(argv[1]));
+		}
+		catch (const std::exception& e)
+		{
+			std::cerr << "ERROR: " << e.what() << std::endl;
+			std::exit(1);
+		}
 	}
 
-    f4mp::Server* server = new f4mp::Server(address, port);
+
+	auto server = new f4mp::Server(address, port);
 
 	server->Start();
 

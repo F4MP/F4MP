@@ -16,6 +16,7 @@
 #include "f4se/PapyrusDelayFunctors.h"
 
 #include <fstream>
+#include <iostream>
 #include <iterator>
 #include <shlobj.h>				// CSIDL_MYCODUMENTS
 
@@ -910,6 +911,7 @@ bool f4mp::F4MP::IsConnected(StaticFunctionTag* base)
 
 bool f4mp::F4MP::Connect(StaticFunctionTag* base, Actor* player, TESNPC* playerActorBase, BSFixedString address, SInt32 port)
 {
+	std::cout << "Connect function invoked." << std::endl;
 	F4MP& self = GetInstance();
 	librg_network_stop(&self.ctx);
 

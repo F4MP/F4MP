@@ -55,3 +55,6 @@ f4mp/scripts/.vscode/settings.json
 f4mp/scripts/copy.bat
 
 f4mp_server/scripts/bin
+
+common/
+f4se_*.txt

@@ -134,6 +134,10 @@ ZPL_BEGIN_C_DECLS
 
 char *zpl_path_get_full_name(zpl_allocator a, char const *path) {
 #if defined(ZPL_SYSTEM_WINDOWS)
+    // This somehow doesn't get defined, so we force the issue here.
+    #ifndef WC_ERR_INVALID_CHARS
+        #define WC_ERR_INVALID_CHARS      0x00000080  // error for invalid chars 
+    #endif
     wchar_t *w_path = NULL;
     wchar_t *w_fullpath = NULL;
     zpl_isize w_len = 0;

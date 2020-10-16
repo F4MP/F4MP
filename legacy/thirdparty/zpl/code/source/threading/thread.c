@@ -31,6 +31,11 @@ void zpl__thread_run(zpl_thread *t) {
 }
 
 #if defined(ZPL_SYSTEM_WINDOWS)
+    // This Windows function somehow doesn't get declared
+    WINBASEAPI DWORD GetThreadId(
+        HANDLE Thread
+	);
+
     DWORD __stdcall zpl__thread_proc(void *arg) {
         zpl_thread *t = cast(zpl_thread *)arg;
         zpl__thread_run(t);
