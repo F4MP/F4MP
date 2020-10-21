@@ -4,6 +4,3 @@
 [submodule "client"]
 	path = client
 	url = ../F4MPClient.git
-[submodule "launcher"]
-	path = launcher
-	url = ../F4MPLauncher.git
