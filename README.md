@@ -10,5 +10,5 @@ Requirements (subject to change):
 * [CMake](https://cmake.org) 3.9 or later.
 * [Microsoft Visual Studio](https://visualstudio.microsoft.com/) 2015 or later, or compatible 64-bit Windows C++ compiler supporting at least C++11.
 * [Fallout 4](https://fallout4.com/), **PC version only.**
-* [Fallout 4 Script Extender](https://f4se.silverlock.org/).
+* [Fallout 4 Script Extender (F4SE)](https://f4se.silverlock.org/).
 
