@@ -1,0 +1,8 @@
+[submodule "server"]
+	path = server
+	url = ../F4MPServer.git
+	branch = develop
+[submodule "client"]
+	path = client
+	url = ../F4MPClient.git
+	branch = develop
