@@ -54,4 +54,7 @@ client/f4se/f4mp/scripts/.vscode/.ropeproject/objectdb
 client/f4se/f4mp/scripts/.vscode/settings.json
 client/f4se/f4mp/scripts/copy.bat
 
-client/f4se/f4mp_server/scripts/bin
+f4mp_server/scripts/bin
+
+common/
+f4se_*.txt
