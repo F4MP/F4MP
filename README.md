@@ -1,8 +1,5 @@
 # F4MP
 [![Discord](https://img.shields.io/discord/729620961346977862.svg?label=&logo=discord&logoColor=ffffff&color=7389D8&labelColor=6A7EC2)](https://discord.gg/pKDHVvf)
 
-Fallout 4 Multiplayer Mod
-
-This repo is for the tooling and misc projects of F4MP
-
-The server is located [here](https://github.com/F4MP/F4MPServer) and the client [here](https://github.com/F4MP/F4MPClient)
+## What is this branch?
+This branch contains legacy code from the original version of the F4MP mod developed by Cokwa, as well as some other additions. This branch should be considered archived and should not be used. It only exists archive the development history pre-rewrite.
